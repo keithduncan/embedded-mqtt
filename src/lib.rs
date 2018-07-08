@@ -5,9 +5,8 @@ extern crate byteorder;
 #[cfg(feature = "std")]
 extern crate std as core;
 
-use core::io::Read;
-
-use byteorder::{BigEndian, ReadBytesExt};
+#[cfg(test)]
+extern crate rayon;
 
 pub mod error;
 pub use error::{Error, Result};
@@ -44,8 +43,26 @@ impl<'buf> FixedHeader<'buf> {
     }
 }
 
-fn parse_packet_type<T: Read>(bytes: &mut T) -> Result<(PacketType, PacketTypeFlags)> {
-    let inp = bytes.read_u8()?;
+pub fn parse_remaining_length(bytes: &[u8]) -> Result<u32> {
+    let mut multiplier = 1;
+    let mut value = 0u32;
+    let mut index = 0;
+
+    loop {
+        let byte = bytes[index];
+        index += 1;
+        value += (byte & 127) as u32 * multiplier;
+        multiplier *= 128;
+        if byte & 128 == 0 {
+            break Ok(value);
+        } else if multiplier > 128 * 128 * 128 {
+            break Err(Error::RemainingLength);
+        }
+    }
+}
+
+pub fn parse_packet_type(bytes: &[u8]) -> Result<(PacketType, PacketTypeFlags)> {
+    let inp = bytes[0];
 
     // high 4 bits are the packet type
     let packet_type = match (inp & 0xF0) >> 4 {
@@ -118,7 +135,7 @@ fn validate_flag_val(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core::io::Cursor;
+    use rayon::prelude::*;
 
     #[test]
     fn packet_type() {
@@ -141,8 +158,7 @@ mod tests {
 
         for (buf, expected_type) in inputs.iter_mut() {
             let expected_flag = buf[0] & 0xF;
-            let mut buf = Cursor::new(buf);
-            let (packet_type, flag) = parse_packet_type(&mut buf).unwrap();
+            let (packet_type, flag) = parse_packet_type(buf).unwrap();
             assert_eq!(packet_type, *expected_type);
             assert_eq!(flag, expected_flag);
         }
@@ -150,8 +166,7 @@ mod tests {
 
     #[test]
     fn bad_packet_type() {
-        let mut buf = Cursor::new(&[15 << 4]);
-        let result = parse_packet_type(&mut buf);
+        let result = parse_packet_type(&[15 << 4]);
         assert_eq!(result, Err(Error::PacketType));
     }
 
@@ -170,8 +185,7 @@ mod tests {
             ([14 << 4 | 1], PacketType::Disconnect),
         ];
         for (buf, _) in inputs.iter_mut() {
-            let mut buf = Cursor::new(buf);
-            let result = parse_packet_type(&mut buf);
+            let result = parse_packet_type(buf);
             assert_eq!(result, Err(Error::PacketFlag));
         }
     }
@@ -184,8 +198,7 @@ mod tests {
             ([10 << 4 | 0], PacketType::Unsubscribe),
         ];
         for (buf, _) in inputs.iter_mut() {
-            let mut buf = Cursor::new(buf);
-            let result = parse_packet_type(&mut buf);
+            let result = parse_packet_type(buf);
             assert_eq!(result, Err(Error::PacketFlag));
         }
     }
@@ -194,10 +207,50 @@ mod tests {
     fn publish_flags() {
         for i in 0..15 {
             let mut input = [03 << 4 | i];
-            let mut buf = Cursor::new(input);
-            let (packet_type, flag) = parse_packet_type(&mut buf).unwrap();
+            let (packet_type, flag) = parse_packet_type(&input).unwrap();
             assert_eq!(packet_type, PacketType::Publish);
             assert_eq!(flag, i);
         }
+    }
+
+    fn encode_remaining_length(mut len: u32, buf: &mut [u8; 4]) {
+        let mut index = 0;
+        loop {
+            let mut byte = len as u8 % 128;
+            len /= 128;
+            if len > 0 {
+                byte |= 128;
+            }
+            buf[index] = byte;
+            index = index + 1;
+
+            if len == 0 {
+                break;
+            }
+        }
+    }
+
+    #[test]
+    fn remaining_length() {
+        // NOTE: This test can take a while to complete.
+        let _: u32 = (0u32..(268435455 + 1))
+            .into_par_iter()
+            .map(|i| {
+                let mut buf = [0u8; 4];
+                encode_remaining_length(i, &mut buf);
+                assert_eq!(
+                    i,
+                    parse_remaining_length(&buf).expect(&format!("Failed for number: {}", i))
+                );
+                0
+            })
+            .sum();
+    }
+
+    #[test]
+    fn bad_remaining_length() {
+        let buf = [0xFF, 0xFF, 0xFF, 0xFF];
+        let result = parse_remaining_length(&buf);
+        assert_eq!(result, Err(Error::RemainingLength));
     }
 }

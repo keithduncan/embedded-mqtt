@@ -1,23 +1,21 @@
-use core::convert::From;
-use core::io::Error as IoError;
 use core::{fmt, result};
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Error {
-    /// I/O error
-    Io,
     /// Invalid packet type in header
     PacketType,
     /// Invalid packet type flag in header
     PacketFlag,
+    /// Malformed remaining length in header
+    RemainingLength,
 }
 
 impl Error {
     fn desc(&self) -> &'static str {
         match *self {
-            Error::Io => "i/o error",
             Error::PacketType => "invalid packet type in header",
             Error::PacketFlag => "invalid packet type flag in header",
+            Error::RemainingLength => "malformed remaining length in header",
         }
     }
 }
@@ -32,13 +30,6 @@ impl fmt::Display for Error {
 impl ::std::error::Error for Error {
     fn description(&self) -> &str {
         self.desc()
-    }
-}
-
-impl From<IoError> for Error {
-    fn from(_: IoError) -> Self {
-        // TODO: See if we can avoid ignoring the underlying I/O error.
-        Error::Io
     }
 }
 
