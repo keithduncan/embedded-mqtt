@@ -21,6 +21,13 @@ pub use error::Error;
 pub mod header;
 pub use header::Header;
 
+#[macro_use]
+pub mod status;
+pub use status::Status;
+
+pub mod connect;
+pub use connect::Connect;
+
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum QoS {
     AtMostOnce,
@@ -44,49 +51,6 @@ pub enum PacketType {
     Pingreq,
     Pingresp,
     Disconnect,
-}
-
-/// The result of a successful parse pass. Taken from the `httparse` crate.
-///
-/// `Complete` is used when the buffer contained the complete value.
-/// `Partial` is used when parsing did not reach the end of the expected value,
-/// but no invalid data was found.
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
-pub enum Status<T> {
-    /// The completed result.
-    Complete(T),
-    /// A partial result.
-    Partial,
-}
-
-impl<T> Status<T> {
-    /// Convenience method to check if status is complete.
-    #[inline]
-    pub fn is_complete(&self) -> bool {
-        match *self {
-            Status::Complete(..) => true,
-            Status::Partial => false,
-        }
-    }
-
-    /// Convenience method to check if status is partial.
-    #[inline]
-    pub fn is_partial(&self) -> bool {
-        match *self {
-            Status::Complete(..) => false,
-            Status::Partial => true,
-        }
-    }
-
-    /// Convenience method to unwrap a Complete value. Panics if the status is
-    /// `Partial`.
-    #[inline]
-    pub fn unwrap(self) -> T {
-        match self {
-            Status::Complete(t) => t,
-            Status::Partial => panic!("Tried to unwrap Status::Partial"),
-        }
-    }
 }
 
 pub type Result<T> = result::Result<T, Error>;
