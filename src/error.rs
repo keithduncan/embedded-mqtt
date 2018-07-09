@@ -1,4 +1,6 @@
-use core::{fmt, result};
+use core::convert::From;
+use core::fmt;
+use core::str::Utf8Error;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Error {
@@ -10,6 +12,8 @@ pub enum Error {
     RemainingLength,
     /// Invalid buffer length
     InvalidLength,
+    /// Invalid UTF-8 encoding
+    Utf8,
 }
 
 impl Error {
@@ -19,6 +23,7 @@ impl Error {
             Error::PacketFlag => "invalid packet type flag in header",
             Error::RemainingLength => "malformed remaining length in header",
             Error::InvalidLength => "invalid buffer length",
+            Error::Utf8 => "invalid utf-8 encoding",
         }
     }
 }
@@ -36,4 +41,8 @@ impl ::std::error::Error for Error {
     }
 }
 
-pub type Result<T> = result::Result<T, Error>;
+impl From<Utf8Error> for Error {
+    fn from(_: Utf8Error) -> Self {
+        Error::Utf8
+    }
+}
