@@ -1,4 +1,4 @@
-// #![deny(warnings)]
+#![deny(warnings)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
 extern crate byteorder;
@@ -10,6 +10,13 @@ extern crate rayon;
 
 pub mod error;
 pub use error::{Error, Result};
+
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub enum QoS {
+    AtMostOnce,
+    AtLeastOnce,
+    ExactlyOnce,
+}
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum PacketType {
@@ -30,40 +37,64 @@ pub enum PacketType {
 }
 
 pub type PacketTypeFlags = u8;
+pub type PacketId = u16;
 
-pub struct FixedHeader<'buf> {
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub struct Header {
     type_: PacketType,
-    // TODO: Temporary field to avoid 'unused lifetime param' errors
-    _ver: &'buf str,
+    flags: PacketTypeFlags,
+    len: u32,
 }
 
-impl<'buf> FixedHeader<'buf> {
+impl Header {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Header> {
+        // "bytes" must be at least 2 bytes long to be a valid fixed header
+        if bytes.len() < 2 {
+            return Err(Error::InvalidLength);
+        }
+
+        let (type_, flags) = parse_packet_type(bytes[0])?;
+        let (len, _) = parse_remaining_length(&bytes[1..])?;
+
+        Ok(Header { type_, flags, len })
+    }
+
     pub fn type_(&self) -> &PacketType {
         &self.type_
     }
+
+    pub fn flags(&self) -> &PacketTypeFlags {
+        &self.flags
+    }
+
+    pub fn len(&self) -> &u32 {
+        &self.len
+    }
 }
 
-pub fn parse_remaining_length(bytes: &[u8]) -> Result<u32> {
+fn parse_remaining_length(bytes: &[u8]) -> Result<(u32, usize)> {
     let mut multiplier = 1;
     let mut value = 0u32;
     let mut index = 0;
 
     loop {
+        if multiplier > 128 * 128 * 128 {
+            break Err(Error::RemainingLength);
+        } else if index >= bytes.len() {
+            break Err(Error::InvalidLength);
+        }
+
         let byte = bytes[index];
         index += 1;
         value += (byte & 127) as u32 * multiplier;
         multiplier *= 128;
         if byte & 128 == 0 {
-            break Ok(value);
-        } else if multiplier > 128 * 128 * 128 {
-            break Err(Error::RemainingLength);
+            break Ok((value, index));
         }
     }
 }
 
-pub fn parse_packet_type(bytes: &[u8]) -> Result<(PacketType, PacketTypeFlags)> {
-    let inp = bytes[0];
-
+fn parse_packet_type(inp: u8) -> Result<(PacketType, PacketTypeFlags)> {
     // high 4 bits are the packet type
     let packet_type = match (inp & 0xF0) >> 4 {
         1 => Ok(PacketType::Connect),
@@ -158,7 +189,7 @@ mod tests {
 
         for (buf, expected_type) in inputs.iter_mut() {
             let expected_flag = buf[0] & 0xF;
-            let (packet_type, flag) = parse_packet_type(buf).unwrap();
+            let (packet_type, flag) = parse_packet_type(buf[0]).unwrap();
             assert_eq!(packet_type, *expected_type);
             assert_eq!(flag, expected_flag);
         }
@@ -166,7 +197,7 @@ mod tests {
 
     #[test]
     fn bad_packet_type() {
-        let result = parse_packet_type(&[15 << 4]);
+        let result = parse_packet_type(15 << 4);
         assert_eq!(result, Err(Error::PacketType));
     }
 
@@ -185,7 +216,7 @@ mod tests {
             ([14 << 4 | 1], PacketType::Disconnect),
         ];
         for (buf, _) in inputs.iter_mut() {
-            let result = parse_packet_type(buf);
+            let result = parse_packet_type(buf[0]);
             assert_eq!(result, Err(Error::PacketFlag));
         }
     }
@@ -198,7 +229,7 @@ mod tests {
             ([10 << 4 | 0], PacketType::Unsubscribe),
         ];
         for (buf, _) in inputs.iter_mut() {
-            let result = parse_packet_type(buf);
+            let result = parse_packet_type(buf[0]);
             assert_eq!(result, Err(Error::PacketFlag));
         }
     }
@@ -206,14 +237,14 @@ mod tests {
     #[test]
     fn publish_flags() {
         for i in 0..15 {
-            let mut input = [03 << 4 | i];
-            let (packet_type, flag) = parse_packet_type(&input).unwrap();
+            let mut input = 03 << 4 | i;
+            let (packet_type, flag) = parse_packet_type(input).unwrap();
             assert_eq!(packet_type, PacketType::Publish);
             assert_eq!(flag, i);
         }
     }
 
-    fn encode_remaining_length(mut len: u32, buf: &mut [u8; 4]) {
+    fn encode_remaining_length(mut len: u32, buf: &mut [u8; 4]) -> usize {
         let mut index = 0;
         loop {
             let mut byte = len as u8 % 128;
@@ -225,7 +256,7 @@ mod tests {
             index = index + 1;
 
             if len == 0 {
-                break;
+                break index;
             }
         }
     }
@@ -237,11 +268,11 @@ mod tests {
             .into_par_iter()
             .map(|i| {
                 let mut buf = [0u8; 4];
-                encode_remaining_length(i, &mut buf);
-                assert_eq!(
-                    i,
-                    parse_remaining_length(&buf).expect(&format!("Failed for number: {}", i))
-                );
+                let expected_index = encode_remaining_length(i, &mut buf);
+                let (len, index) =
+                    parse_remaining_length(&buf).expect(&format!("Failed for number: {}", i));
+                assert_eq!(i, len);
+                assert_eq!(expected_index, index);
                 0
             })
             .sum();
@@ -252,5 +283,45 @@ mod tests {
         let buf = [0xFF, 0xFF, 0xFF, 0xFF];
         let result = parse_remaining_length(&buf);
         assert_eq!(result, Err(Error::RemainingLength));
+    }
+
+    #[test]
+    fn bad_remaining_length2() {
+        let buf = [0xFF, 0xFF];
+        let result = parse_remaining_length(&buf);
+        assert_eq!(result, Err(Error::InvalidLength));
+    }
+
+    #[test]
+    fn fixed_header1() {
+        let buf = [
+            01 << 4 | 0b0000, // PacketType::Connect
+            0,                // remaining length
+        ];
+        let header = Header::from_bytes(&buf).unwrap();
+        assert_eq!(*header.type_(), PacketType::Connect);
+        assert_eq!(*header.flags(), 0);
+        assert_eq!(*header.len(), 0);
+    }
+
+    #[test]
+    fn fixed_header2() {
+        let buf = [
+            03 << 4 | 0b0000, // PacketType::Publish
+            0x80,             // remaining length
+            0x80,
+            0x80,
+            0x1,
+        ];
+        let header = Header::from_bytes(&buf).unwrap();
+        assert_eq!(*header.type_(), PacketType::Publish);
+        assert_eq!(*header.flags(), 0);
+        assert_eq!(*header.len(), 2097152);
+    }
+
+    #[test]
+    fn bad_len() {
+        let result = Header::from_bytes(&[03 << 4 | 0]);
+        assert_eq!(result, Err(Error::InvalidLength));
     }
 }

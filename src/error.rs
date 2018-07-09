@@ -8,6 +8,8 @@ pub enum Error {
     PacketFlag,
     /// Malformed remaining length in header
     RemainingLength,
+    /// Invalid buffer length
+    InvalidLength,
 }
 
 impl Error {
@@ -16,6 +18,7 @@ impl Error {
             Error::PacketType => "invalid packet type in header",
             Error::PacketFlag => "invalid packet type flag in header",
             Error::RemainingLength => "malformed remaining length in header",
+            Error::InvalidLength => "invalid buffer length",
         }
     }
 }
