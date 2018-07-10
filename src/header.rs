@@ -1,4 +1,4 @@
-use super::{Error, PacketType, PacketTypeFlags, Result};
+use super::{Error, PacketType, PacketTypeFlags, Result, Status};
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct Header {
@@ -8,16 +8,16 @@ pub struct Header {
 }
 
 impl Header {
-    pub fn from_bytes(bytes: &[u8]) -> Result<Header> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Status<Header>> {
         // "bytes" must be at least 2 bytes long to be a valid fixed header
         if bytes.len() < 2 {
-            return Err(Error::InvalidLength);
+            return Ok(Status::Partial);
         }
 
         let (type_, flags) = parse_packet_type(bytes[0])?;
         let (len, _) = parse_remaining_length(&bytes[1..])?;
 
-        Ok(Header { type_, flags, len })
+        Ok(Status::Complete(Header { type_, flags, len }))
     }
 
     pub fn type_(&self) -> &PacketType {
@@ -259,7 +259,7 @@ mod tests {
             01 << 4 | 0b0000, // PacketType::Connect
             0,                // remaining length
         ];
-        let header = Header::from_bytes(&buf).unwrap();
+        let header = Header::from_bytes(&buf).unwrap().unwrap();
         assert_eq!(*header.type_(), PacketType::Connect);
         assert_eq!(*header.flags(), 0);
         assert_eq!(*header.len(), 0);
@@ -274,7 +274,7 @@ mod tests {
             0x80,
             0x1,
         ];
-        let header = Header::from_bytes(&buf).unwrap();
+        let header = Header::from_bytes(&buf).unwrap().unwrap();
         assert_eq!(*header.type_(), PacketType::Publish);
         assert_eq!(*header.flags(), 0);
         assert_eq!(*header.len(), 2097152);
@@ -282,7 +282,7 @@ mod tests {
 
     #[test]
     fn bad_len() {
-        let result = Header::from_bytes(&[03 << 4 | 0]);
-        assert_eq!(result, Err(Error::InvalidLength));
+        let result = Header::from_bytes(&[03 << 4 | 0]).unwrap();
+        assert_eq!(result, Status::Partial);
     }
 }

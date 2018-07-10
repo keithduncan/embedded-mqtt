@@ -18,12 +18,12 @@ pub type PacketId = u16;
 pub mod error;
 pub use error::Error;
 
-pub mod header;
-pub use header::Header;
-
 #[macro_use]
 pub mod status;
 pub use status::Status;
+
+pub mod header;
+pub use header::Header;
 
 pub mod connect;
 pub use connect::Connect;
