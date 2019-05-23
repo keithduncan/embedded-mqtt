@@ -1,4 +1,8 @@
-use super::{parse_string, Result, Status};
+use crate::{
+    string,
+    status::Status,
+    result::Result,
+};
 
 pub struct Connect<'buf> {
     name: &'buf str,
@@ -9,7 +13,7 @@ pub struct Connect<'buf> {
 impl<'buf> Connect<'buf> {
     pub fn from_bytes(bytes: &[u8]) -> Result<Status<Connect>> {
         // read protocol name
-        let name = complete!(parse_string(bytes));
+        let name = complete!(string::parse_string(bytes));
         let mut read = 2 + name.len(); // 2 bytes for the string len prefix + length of string in bytes
 
         // read protocol revision

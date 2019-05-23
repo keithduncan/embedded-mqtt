@@ -1,6 +1,8 @@
-use core::convert::From;
-use core::fmt;
-use core::str::Utf8Error;
+use core::{
+    convert::From,
+    fmt,
+    str::Utf8Error,
+};
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Error {

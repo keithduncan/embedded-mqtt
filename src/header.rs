@@ -1,8 +1,16 @@
-use super::{Error, PacketType, PacketTypeFlags, Result, Status};
+use crate::{
+    error::Error,
+    packet::{
+        PacketType,
+        PacketTypeFlags,
+    },
+    result::Result,
+    status::Status,
+};
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct Header {
-    type_: PacketType,
+    r#type: PacketType,
     flags: PacketTypeFlags,
     len: u32,
 }
@@ -14,14 +22,14 @@ impl Header {
             return Ok(Status::Partial);
         }
 
-        let (type_, flags) = parse_packet_type(bytes[0])?;
+        let (r#type, flags) = parse_packet_type(bytes[0])?;
         let (len, _) = parse_remaining_length(&bytes[1..])?;
 
-        Ok(Status::Complete(Header { type_, flags, len }))
+        Ok(Status::Complete(Header { r#type, flags, len }))
     }
 
-    pub fn type_(&self) -> &PacketType {
-        &self.type_
+    pub fn r#type(&self) -> &PacketType {
+        &self.r#type
     }
 
     pub fn flags(&self) -> &PacketTypeFlags {
@@ -260,7 +268,7 @@ mod tests {
             0,                // remaining length
         ];
         let header = Header::from_bytes(&buf).unwrap().unwrap();
-        assert_eq!(*header.type_(), PacketType::Connect);
+        assert_eq!(*header.r#type(), PacketType::Connect);
         assert_eq!(*header.flags(), 0);
         assert_eq!(*header.len(), 0);
     }
@@ -275,7 +283,7 @@ mod tests {
             0x1,
         ];
         let header = Header::from_bytes(&buf).unwrap().unwrap();
-        assert_eq!(*header.type_(), PacketType::Publish);
+        assert_eq!(*header.r#type(), PacketType::Publish);
         assert_eq!(*header.flags(), 0);
         assert_eq!(*header.len(), 2097152);
     }

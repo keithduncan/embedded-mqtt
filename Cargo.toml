@@ -4,8 +4,7 @@ version = "0.1.0"
 authors = ["Rajasekharan Vengalil <avranju@gmail.com>"]
 
 [features]
-default = ["std"]
-std = ["byteorder/std"]
+std = []
 
 [dependencies]
 byteorder = "1.2"
