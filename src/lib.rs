@@ -1,6 +1,6 @@
-#![deny(warnings)]
+#![no_std]
 
-extern crate core;
+#![deny(warnings)]
 
 extern crate byteorder;
 
