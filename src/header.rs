@@ -16,16 +16,16 @@ pub struct Header {
 }
 
 impl Header {
-    pub fn from_bytes(bytes: &[u8]) -> Result<Status<Header>> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Status<(usize, Header)>> {
         // "bytes" must be at least 2 bytes long to be a valid fixed header
         if bytes.len() < 2 {
             return Ok(Status::Partial);
         }
 
         let (r#type, flags) = parse_packet_type(bytes[0])?;
-        let (len, _) = parse_remaining_length(&bytes[1..])?;
+        let (len, index) = parse_remaining_length(&bytes[1..])?;
 
-        Ok(Status::Complete(Header { r#type, flags, len }))
+        Ok(Status::Complete((index + 1, Header { r#type, flags, len })))
     }
 
     pub fn r#type(&self) -> &PacketType {
@@ -268,7 +268,7 @@ mod tests {
             01 << 4 | 0b0000, // PacketType::Connect
             0,                // remaining length
         ];
-        let header = Header::from_bytes(&buf).unwrap().unwrap();
+        let header = Header::from_bytes(&buf).unwrap().unwrap().1;
         assert_eq!(*header.r#type(), PacketType::Connect);
         assert_eq!(*header.flags(), 0);
         assert_eq!(*header.len(), 0);
@@ -283,7 +283,7 @@ mod tests {
             0x80,
             0x1,
         ];
-        let header = Header::from_bytes(&buf).unwrap().unwrap();
+        let header = Header::from_bytes(&buf).unwrap().unwrap().1;
         assert_eq!(*header.r#type(), PacketType::Publish);
         assert_eq!(*header.flags(), 0);
         assert_eq!(*header.len(), 2097152);
