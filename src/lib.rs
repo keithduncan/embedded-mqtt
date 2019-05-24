@@ -2,6 +2,9 @@
 
 #![deny(warnings)]
 
+#[cfg(test)]
+extern crate std;
+
 extern crate byteorder;
 
 #[cfg(test)]

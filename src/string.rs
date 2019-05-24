@@ -47,7 +47,11 @@ pub fn parse_string(bytes: &[u8]) -> Result<Status<&str>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::{Cursor, Write};
+    use std::{
+        io::{Cursor, Write},
+        vec::Vec,
+        format,
+    };
 
     use byteorder::WriteBytesExt;
 

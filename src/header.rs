@@ -136,6 +136,7 @@ fn validate_flag_val(
 mod tests {
     use super::*;
     use rayon::prelude::*;
+    use std::format;
 
     #[test]
     fn packet_type() {
