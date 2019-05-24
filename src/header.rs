@@ -2,7 +2,7 @@ use crate::{
     error::Error,
     packet::{
         PacketType,
-        PacketTypeFlags,
+        PacketFlags,
     },
     result::Result,
     status::Status,
@@ -11,7 +11,7 @@ use crate::{
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct Header {
     r#type: PacketType,
-    flags: PacketTypeFlags,
+    flags: PacketFlags,
     len: u32,
 }
 
@@ -32,7 +32,7 @@ impl Header {
         &self.r#type
     }
 
-    pub fn flags(&self) -> &PacketTypeFlags {
+    pub fn flags(&self) -> &PacketFlags {
         &self.flags
     }
 
@@ -63,7 +63,7 @@ fn parse_remaining_length(bytes: &[u8]) -> Result<(u32, usize)> {
     }
 }
 
-fn parse_packet_type(inp: u8) -> Result<(PacketType, PacketTypeFlags)> {
+fn parse_packet_type(inp: u8) -> Result<(PacketType, PacketFlags)> {
     // high 4 bits are the packet type
     let packet_type = match (inp & 0xF0) >> 4 {
         1 => Ok(PacketType::Connect),
@@ -91,8 +91,8 @@ fn parse_packet_type(inp: u8) -> Result<(PacketType, PacketTypeFlags)> {
 
 fn validate_flag(
     packet_type: PacketType,
-    flags: PacketTypeFlags,
-) -> Result<(PacketType, PacketTypeFlags)> {
+    flags: PacketFlags,
+) -> Result<(PacketType, PacketFlags)> {
     // for the following packet types, the control flag MUST be zero
     const ZERO_TYPES: &[PacketType] = &[
         PacketType::Connect,
@@ -119,10 +119,10 @@ fn validate_flag(
 
 fn validate_flag_val(
     packet_type: PacketType,
-    flags: PacketTypeFlags,
+    flags: PacketFlags,
     types: &[PacketType],
-    expected_flags: PacketTypeFlags,
-) -> Result<(PacketType, PacketTypeFlags)> {
+    expected_flags: PacketFlags,
+) -> Result<(PacketType, PacketFlags)> {
     if let Some(_) = types.iter().find(|&&v| v == packet_type) {
         if flags != expected_flags {
             return Err(Error::PacketFlag);

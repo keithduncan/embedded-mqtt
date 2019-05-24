@@ -16,5 +16,5 @@ pub enum PacketType {
     Disconnect,
 }
 
-pub type PacketTypeFlags = u8;
+pub type PacketFlags = u8;
 pub type PacketId = u16;
