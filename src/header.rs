@@ -48,9 +48,9 @@ fn parse_remaining_length(bytes: &[u8]) -> Result<(u32, usize)> {
 
     loop {
         if multiplier > 128 * 128 * 128 {
-            break Err(Error::RemainingLength);
+            return Err(Error::RemainingLength);
         } else if index >= bytes.len() {
-            break Err(Error::InvalidLength);
+            return Err(Error::InvalidLength);
         }
 
         let byte = bytes[index];
@@ -58,7 +58,7 @@ fn parse_remaining_length(bytes: &[u8]) -> Result<(u32, usize)> {
         value += (byte & 127) as u32 * multiplier;
         multiplier *= 128;
         if byte & 128 == 0 {
-            break Ok((value, index));
+            return Ok((value, index));
         }
     }
 }
