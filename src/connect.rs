@@ -6,7 +6,7 @@ use crate::{
 
 pub struct Connect<'buf> {
     name: &'buf str,
-    revision: u8,
+    level: u8,
     flags: u8,
 }
 
@@ -16,14 +16,14 @@ impl<'buf> Connect<'buf> {
         let (offset, name) = complete!(string::parse_string(bytes));
 
         // read protocol revision
-        let (offset, revision) = next!(bytes, offset);
+        let (offset, level) = next!(bytes, offset);
 
         // read protocol flags
         let (offset, flags) = next!(bytes, offset);
 
         Ok(Status::Complete((offset, Connect {
             name,
-            revision,
+            level,
             flags,
         })))
     }
@@ -32,8 +32,8 @@ impl<'buf> Connect<'buf> {
         self.name
     }
 
-    pub fn revision(&self) -> &u8 {
-        &self.revision
+    pub fn level(&self) -> &u8 {
+        &self.level
     }
 
     pub fn flags(&self) -> &u8 {
