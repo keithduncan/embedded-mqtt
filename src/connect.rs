@@ -105,9 +105,10 @@ impl<'buf> Connect<'buf> {
 
         let flags = Flags(flags);
 
-        match flags.will_qos() {
-            Err(qos::Error::BadPattern) => return Err(error::Error::InvalidConnectFlag),
-            Ok(_) => (),
+        if let Err(e) = flags.will_qos() {
+            match e {
+                qos::Error::BadPattern => return Err(error::Error::InvalidConnectFlag),
+            }
         }
 
         // read protocol keep alive
