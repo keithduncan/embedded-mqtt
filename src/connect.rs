@@ -2,12 +2,15 @@ use crate::{
     string,
     status::Status,
     result::Result,
+    error,
     qos,
 };
 
 use core::{
     fmt::Debug,
-    convert::TryInto,
+    convert::{
+        TryInto,
+    },
 };
 
 use byteorder::{
@@ -22,10 +25,11 @@ use bitfield::BitRange;
 pub struct Connect<'buf> {
     name: &'buf str,
     level: u8,
-    flags: u8,
+    flags: Flags,
     keep_alive: u16,
 }
 
+#[derive(PartialEq)]
 pub struct Flags(u8);
 
 bitfield_bitrange! {
@@ -99,6 +103,13 @@ impl<'buf> Connect<'buf> {
         // read protocol flags
         let (offset, flags) = read!(parse_byte, bytes, offset);
 
+        let flags = Flags(flags);
+
+        match flags.will_qos() {
+            Err(qos::Error::BadPattern) => return Err(error::Error::InvalidConnectFlag),
+            Ok(_) => (),
+        }
+
         // read protocol keep alive
         let (offset, keep_alive) = read!(parse_length, bytes, offset);
 
@@ -118,7 +129,7 @@ impl<'buf> Connect<'buf> {
         &self.level
     }
 
-    pub fn flags(&self) -> &u8 {
+    pub fn flags(&self) -> &Flags {
         &self.flags
     }
 
