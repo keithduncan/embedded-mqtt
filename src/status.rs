@@ -55,7 +55,7 @@ macro_rules! complete {
 macro_rules! next {
     ($bytes:ident, $read:ident) => {{
         if $bytes.len() - $read > 0 {
-            $bytes[$read]
+            ($read + 1, $bytes[$read])
         } else {
             return Ok(Status::Partial);
         }

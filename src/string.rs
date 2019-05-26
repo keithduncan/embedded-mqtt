@@ -11,7 +11,7 @@ use byteorder::{
     ByteOrder,
 };
 
-pub fn parse_string(bytes: &[u8]) -> Result<Status<&str>> {
+pub fn parse_string(bytes: &[u8]) -> Result<Status<(usize, &str)>> {
     // we need at least the 2 bytes to figure out length of the utf-8 encoded
     // string in bytes
     if bytes.len() < 2 {
@@ -40,7 +40,7 @@ pub fn parse_string(bytes: &[u8]) -> Result<Status<&str>> {
     if val.chars().any(|ch| ch == '\u{0000}') {
         Err(Error::Utf8)
     } else {
-        Ok(Status::Complete(val))
+        Ok(Status::Complete(((len + 2) as usize, val)))
     }
 }
 
@@ -69,7 +69,7 @@ mod tests {
     fn empty_str() {
         let mut buf = [0u8; 2];
         BigEndian::write_u16(&mut buf, 0);
-        assert_eq!(Status::Complete(""), parse_string(&buf).unwrap());
+        assert_eq!(Status::Complete((2, "")), parse_string(&buf).unwrap());
     }
 
     #[test]
@@ -79,7 +79,7 @@ mod tests {
         buf.write_u16::<BigEndian>(inp.len() as u16).unwrap();
         buf.write(inp.as_bytes()).unwrap();
         assert_eq!(
-            Status::Complete(inp),
+            Status::Complete((14, inp)),
             parse_string(buf.get_ref().as_ref()).unwrap()
         );
     }

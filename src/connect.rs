@@ -11,23 +11,21 @@ pub struct Connect<'buf> {
 }
 
 impl<'buf> Connect<'buf> {
-    pub fn from_bytes(bytes: &[u8]) -> Result<Status<Connect>> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Status<(usize, Connect)>> {
         // read protocol name
-        let name = complete!(string::parse_string(bytes));
-        let mut read = 2 + name.len(); // 2 bytes for the string len prefix + length of string in bytes
+        let (offset, name) = complete!(string::parse_string(bytes));
 
         // read protocol revision
-        let revision = next!(bytes, read);
-        read += 1;
+        let (offset, revision) = next!(bytes, offset);
 
         // read protocol flags
-        let flags = next!(bytes, read);
+        let (offset, flags) = next!(bytes, offset);
 
-        Ok(Status::Complete(Connect {
+        Ok(Status::Complete((offset, Connect {
             name,
             revision,
             flags,
-        }))
+        })))
     }
 
     pub fn name(&self) -> &str {
