@@ -270,7 +270,8 @@ mod tests {
             01 << 4 | 0b0000, // PacketType::Connect
             0,                // remaining length
         ];
-        let header = Header::from_bytes(&buf).unwrap().unwrap().1;
+        let (offset, header) = Header::from_bytes(&buf).unwrap().unwrap();
+        assert_eq!(offset, 2);
         assert_eq!(*header.r#type(), PacketType::Connect);
         assert_eq!(*header.flags(), 0);
         assert_eq!(*header.len(), 0);
@@ -285,7 +286,8 @@ mod tests {
             0x80,
             0x1,
         ];
-        let header = Header::from_bytes(&buf).unwrap().unwrap().1;
+        let (offset, header) = Header::from_bytes(&buf).unwrap().unwrap();
+        assert_eq!(offset, 5);
         assert_eq!(*header.r#type(), PacketType::Publish);
         assert_eq!(*header.flags(), 0);
         assert_eq!(*header.len(), 2097152);
