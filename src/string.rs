@@ -38,10 +38,10 @@ pub fn parse_string(bytes: &[u8]) -> Result<Status<(usize, &str)>> {
     // Requirement MQTT-1.5.3-2 requires that there be no U+0000 code points
     // in the string.
     if val.chars().any(|ch| ch == '\u{0000}') {
-        Err(Error::Utf8)
-    } else {
-        Ok(Status::Complete(((len + 2) as usize, val)))
+        return Err(Error::Utf8)
     }
+    
+    Ok(Status::Complete(((len + 2) as usize, val)))
 }
 
 #[cfg(test)]
