@@ -63,6 +63,24 @@ fn parse_remaining_length(bytes: &[u8]) -> Result<(u32, usize)> {
     }
 }
 
+#[allow(dead_code)]
+fn encode_remaining_length(mut len: u32, buf: &mut [u8; 4]) -> usize {
+    let mut index = 0;
+    loop {
+        let mut byte = len as u8 % 128;
+        len /= 128;
+        if len > 0 {
+            byte |= 128;
+        }
+        buf[index] = byte;
+        index = index + 1;
+
+        if len == 0 {
+            break index;
+        }
+    }
+}
+
 fn parse_packet_type(inp: u8) -> Result<(PacketType, PacketFlags)> {
     // high 4 bits are the packet type
     let packet_type = match (inp & 0xF0) >> 4 {
@@ -214,24 +232,8 @@ mod tests {
         }
     }
 
-    fn encode_remaining_length(mut len: u32, buf: &mut [u8; 4]) -> usize {
-        let mut index = 0;
-        loop {
-            let mut byte = len as u8 % 128;
-            len /= 128;
-            if len > 0 {
-                byte |= 128;
-            }
-            buf[index] = byte;
-            index = index + 1;
-
-            if len == 0 {
-                break index;
-            }
-        }
-    }
-
     #[test]
+    #[ignore]
     fn remaining_length() {
         // NOTE: This test can take a while to complete.
         let _: u32 = (0u32..(268435455 + 1))
