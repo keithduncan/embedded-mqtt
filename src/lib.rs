@@ -13,7 +13,7 @@ extern crate rayon;
 pub mod error;
 #[macro_use]
 pub mod status;
-pub mod header;
+pub mod fixed_header;
 pub mod connect;
 pub mod packet;
 pub mod result;
