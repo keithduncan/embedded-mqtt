@@ -2,8 +2,10 @@ use crate::{
     string,
     status::Status,
     result::Result,
-    qos::QoS,
+    //qos::QoS,
 };
+
+use core::fmt::Debug;
 
 use byteorder::{
     BigEndian,
@@ -19,17 +21,34 @@ pub struct Connect<'buf> {
     keep_alive: u16,
 }
 
-bitfield! {
-    pub struct Flags(u8);
-    //no default BitRange;
-    impl Debug;
+pub struct Flags(u8);
 
-    pub has_username, _       : 8;
-    pub has_password, _       : 7;
-    pub will_retain, _        : 6;
-    pub into QoS, will_qos, _ : 5, 4;
-    pub will_flag, _          : 3;
-    pub clean_session, _      : 1;
+bitfield_bitrange! {
+    struct Flags(u8)
+}
+
+impl Flags {
+    bitfield_fields! {
+        bool;
+        pub has_username, _       : 8;
+        pub has_password, _       : 7;
+        pub will_retain, _        : 6;
+        //pub into QoS, will_qos, _ : 5, 4;
+        pub will_flag, _          : 3;
+        pub clean_session, _      : 1;
+    }
+}
+
+impl Debug for Flags {
+    bitfield_debug! {
+        struct Flags;
+        pub has_username, _       : 8;
+        pub has_password, _       : 7;
+        pub will_retain, _        : 6;
+        //pub into QoS, will_qos, _ : 5, 4;
+        pub will_flag, _          : 3;
+        pub clean_session, _      : 1;
+    }
 }
 
 fn parse_byte(bytes: &[u8]) -> Result<Status<(usize, u8)>> {
