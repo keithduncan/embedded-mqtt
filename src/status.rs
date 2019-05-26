@@ -50,14 +50,3 @@ macro_rules! complete {
         }
     };
 }
-
-#[macro_export]
-macro_rules! next {
-    ($bytes:ident, $read:ident) => {{
-        if $bytes.len() - $read > 0 {
-            ($read + 1, $bytes[$read])
-        } else {
-            return Ok(Status::Partial);
-        }
-    }};
-}
