@@ -8,6 +8,7 @@ std = []
 
 [dependencies]
 byteorder = "1.2"
+bitfield = "0.13.1"
 
 [dev-dependencies]
 rayon = "1.0"

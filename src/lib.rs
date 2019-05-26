@@ -4,11 +4,13 @@
 
 #[cfg(test)]
 extern crate std;
+#[cfg(test)]
+extern crate rayon;
 
 extern crate byteorder;
 
-#[cfg(test)]
-extern crate rayon;
+#[macro_use]
+extern crate bitfield;
 
 pub mod error;
 #[macro_use]
@@ -17,5 +19,6 @@ pub mod fixed_header;
 pub mod connect;
 pub mod packet;
 pub mod result;
+pub mod qos;
 
 mod string;

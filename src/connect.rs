@@ -2,6 +2,7 @@ use crate::{
     string,
     status::Status,
     result::Result,
+    qos::QoS,
 };
 
 use byteorder::{
@@ -16,6 +17,19 @@ pub struct Connect<'buf> {
     level: u8,
     flags: u8,
     keep_alive: u16,
+}
+
+bitfield! {
+    pub struct Flags(u8);
+    //no default BitRange;
+    impl Debug;
+
+    pub has_username, _       : 8;
+    pub has_password, _       : 7;
+    pub will_retain, _        : 6;
+    pub into QoS, will_qos, _ : 5, 4;
+    pub will_flag, _          : 3;
+    pub clean_session, _      : 1;
 }
 
 fn parse_byte(bytes: &[u8]) -> Result<Status<(usize, u8)>> {
