@@ -2,15 +2,20 @@ use crate::{
     string,
     status::Status,
     result::Result,
-    //qos::QoS,
+    qos,
 };
 
-use core::fmt::Debug;
+use core::{
+    fmt::Debug,
+    convert::TryInto,
+};
 
 use byteorder::{
     BigEndian,
     ByteOrder,
 };
+
+use bitfield::BitRange;
 
 // VariableHeader for Connect packet
 #[derive(PartialEq, Debug)]
@@ -33,9 +38,14 @@ impl Flags {
         pub has_username, _       : 8;
         pub has_password, _       : 7;
         pub will_retain, _        : 6;
-        //pub into QoS, will_qos, _ : 5, 4;
+        
         pub will_flag, _          : 3;
         pub clean_session, _      : 1;
+    }
+
+    fn will_qos(&self) -> core::result::Result<qos::QoS, qos::Error> {
+        let qos_bits: u8 = self.bit_range(5, 4);
+        qos_bits.try_into()
     }
 }
 
@@ -45,7 +55,7 @@ impl Debug for Flags {
         pub has_username, _       : 8;
         pub has_password, _       : 7;
         pub will_retain, _        : 6;
-        //pub into QoS, will_qos, _ : 5, 4;
+        pub into QoS, will_qos, _ : 5, 4;
         pub will_flag, _          : 3;
         pub clean_session, _      : 1;
     }
