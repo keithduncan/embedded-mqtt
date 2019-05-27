@@ -1,36 +1,35 @@
-use core::str;
+use core::{
+    str,
+    cmp::min,
+};
 
 use crate::{
 	status::Status,
 	error::Error,
 	result::Result,
-};
-
-use byteorder::{
-    BigEndian,
-    ByteOrder,
+    decoder,
 };
 
 pub fn parse_string(bytes: &[u8]) -> Result<Status<(usize, &str)>> {
-    // we need at least the 2 bytes to figure out length of the utf-8 encoded
-    // string in bytes
-    if bytes.len() < 2 {
-        return Ok(Status::Partial);
+    let offset = 0;
+
+    let (offset, string_len) = read!(decoder::parse_u16, bytes, offset);
+
+    let available = bytes.len() - offset;
+
+    let needed = string_len as usize - min(available, string_len as usize);
+    if needed > 0 {
+        return Ok(Status::Partial(needed));
     }
 
-    let len = BigEndian::read_u16(bytes);
-    if bytes.len() - 2 < len as usize {
-        return Ok(Status::Partial);
-    }
-
-    let val = if len > 0 {
+    let val = if string_len > 0 {
         // Rust string slices are never in the code point range 0xD800 and
         // 0xDFFF which takes care of requirement MQTT-1.5.3-1. str::from_utf8
         // will fail if those code points are found in "bytes".
         //
         // Rust utf-8 decoding also takes care of MQTT-1.5.3-3. U+FEFF does not
         // get ignored/stripped off.
-        str::from_utf8(&bytes[2..(len + 2) as usize])?
+        str::from_utf8(&bytes[2..(2 + string_len) as usize])?
     } else {
         ""
     };
@@ -41,7 +40,7 @@ pub fn parse_string(bytes: &[u8]) -> Result<Status<(usize, &str)>> {
         return Err(Error::Utf8)
     }
     
-    Ok(Status::Complete(((len + 2) as usize, val)))
+    Ok(Status::Complete(((2 + string_len) as usize, val)))
 }
 
 #[cfg(test)]

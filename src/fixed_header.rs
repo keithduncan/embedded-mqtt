@@ -17,13 +17,13 @@ pub struct FixedHeader {
 
 impl FixedHeader {
     pub fn from_bytes(bytes: &[u8]) -> Result<Status<(usize, Self)>> {
-        // "bytes" must be at least 2 bytes long to be a valid fixed header
-        if bytes.len() < 2 {
-            return Ok(Status::Partial);
+        // "bytes" must be at least 3 bytes long to be a valid fixed header
+        if bytes.len() < 3 {
+            return Ok(Status::Partial(3));
         }
 
         let (r#type, flags) = parse_packet_type(bytes[0])?;
-        let (len, index) = parse_remaining_length(&bytes[1..])?;
+        let (len, index) = complete!(parse_remaining_length(&bytes[1..]));
 
         Ok(Status::Complete((index + 1, Self { r#type, flags, len })))
     }
@@ -41,7 +41,7 @@ impl FixedHeader {
     }
 }
 
-fn parse_remaining_length(bytes: &[u8]) -> Result<(u32, usize)> {
+fn parse_remaining_length(bytes: &[u8]) -> Result<Status<(u32, usize)>> {
     let mut multiplier = 1;
     let mut value = 0u32;
     let mut index = 0;
@@ -49,16 +49,21 @@ fn parse_remaining_length(bytes: &[u8]) -> Result<(u32, usize)> {
     loop {
         if multiplier > 128 * 128 * 128 {
             return Err(Error::RemainingLength);
-        } else if index >= bytes.len() {
-            return Err(Error::InvalidLength);
+        }
+
+        if index >= bytes.len() {
+            return Ok(Status::Partial(1));
         }
 
         let byte = bytes[index];
         index += 1;
-        value += (byte & 127) as u32 * multiplier;
+
+        value += (byte & 0b01111111) as u32 * multiplier;
+
         multiplier *= 128;
+
         if byte & 128 == 0 {
-            return Ok((value, index));
+            return Ok(Status::Complete((value, index)));
         }
     }
 }

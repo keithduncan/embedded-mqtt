@@ -4,6 +4,7 @@ use crate::{
     result::Result,
     error,
     qos,
+    decoder,
 };
 
 use core::{
@@ -11,11 +12,6 @@ use core::{
     convert::{
         TryInto,
     },
-};
-
-use byteorder::{
-    BigEndian,
-    ByteOrder,
 };
 
 use bitfield::BitRange;
@@ -67,31 +63,6 @@ impl Debug for Flags {
     }
 }
 
-fn parse_byte(bytes: &[u8]) -> Result<Status<(usize, u8)>> {
-    if bytes.len() < 1 {
-        return Ok(Status::Partial)
-    }
-
-    Ok(Status::Complete((1, bytes[0])))
-}
-
-fn parse_length(bytes: &[u8]) -> Result<Status<(usize, u16)>> {
-    if bytes.len() < 2 {
-        return Ok(Status::Partial)
-    }
-
-    Ok(Status::Complete((2, BigEndian::read_u16(&bytes[0..2]))))
-}
-
-macro_rules! read {
-    ($fn:path, $bytes:expr, $offset:expr) => {
-        match try!($fn(&$bytes[$offset..])) {
-            Status::Complete(v) => ($offset + v.0, v.1),
-            Status::Partial => return Ok(Status::Partial),
-        }
-    };
-}
-
 impl<'buf> Connect<'buf> {
     pub fn from_bytes(bytes: &[u8]) -> Result<Status<(usize, Connect)>> {
         let offset = 0;
@@ -100,14 +71,14 @@ impl<'buf> Connect<'buf> {
         let (offset, name) = read!(string::parse_string, bytes, offset);
 
         // read protocol revision
-        let (offset, level) = read!(parse_byte, bytes, offset);
+        let (offset, level) = read!(decoder::parse_u8, bytes, offset);
 
         if level != PROTOCOL_LEVEL_MQTT_3_1_1 {
             return Err(error::Error::InvalidProtocolLevel)
         }
 
         // read protocol flags
-        let (offset, flags) = read!(parse_byte, bytes, offset);
+        let (offset, flags) = read!(decoder::parse_u8, bytes, offset);
 
         let flags = Flags(flags);
 
@@ -118,7 +89,7 @@ impl<'buf> Connect<'buf> {
         }
 
         // read protocol keep alive
-        let (offset, keep_alive) = read!(parse_length, bytes, offset);
+        let (offset, keep_alive) = read!(decoder::parse_u16, bytes, offset);
 
         Ok(Status::Complete((offset, Connect {
             name,

@@ -21,4 +21,5 @@ pub mod packet;
 pub mod result;
 pub mod qos;
 
+mod decoder;
 mod string;

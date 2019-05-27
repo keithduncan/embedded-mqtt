@@ -8,7 +8,7 @@ pub enum Status<T> {
     /// The completed result.
     Complete(T),
     /// A partial result.
-    Partial,
+    Partial(usize),
 }
 
 impl<T> Status<T> {
@@ -17,7 +17,7 @@ impl<T> Status<T> {
     pub fn is_complete(&self) -> bool {
         match *self {
             Status::Complete(..) => true,
-            Status::Partial => false,
+            Status::Partial(..) => false,
         }
     }
 
@@ -26,7 +26,7 @@ impl<T> Status<T> {
     pub fn is_partial(&self) -> bool {
         match *self {
             Status::Complete(..) => false,
-            Status::Partial => true,
+            Status::Partial(..) => true,
         }
     }
 
@@ -36,7 +36,7 @@ impl<T> Status<T> {
     pub fn unwrap(self) -> T {
         match self {
             Status::Complete(t) => t,
-            Status::Partial => panic!("Tried to unwrap Status::Partial"),
+            Status::Partial(..) => panic!("Tried to unwrap Status::Partial"),
         }
     }
 }
@@ -46,7 +46,16 @@ macro_rules! complete {
     ($e:expr) => {
         match try!($e) {
             Status::Complete(v) => v,
-            Status::Partial => return Ok(Status::Partial),
+            Status::Partial(x) => return Ok(Status::Partial(x)),
+        }
+    };
+}
+
+macro_rules! read {
+    ($fn:path, $bytes:expr, $offset:expr) => {
+        match try!($fn(&$bytes[$offset..])) {
+            Status::Complete(v) => ($offset + v.0, v.1),
+            Status::Partial(x) => return Ok(Status::Partial(x)),
         }
     };
 }
