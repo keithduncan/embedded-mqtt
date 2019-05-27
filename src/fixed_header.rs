@@ -31,16 +31,16 @@ impl FixedHeader {
         Ok(Status::Complete((offset, Self { r#type, flags, len })))
     }
 
-    pub fn r#type(&self) -> &PacketType {
-        &self.r#type
+    pub fn r#type(&self) -> PacketType {
+        self.r#type
     }
 
-    pub fn flags(&self) -> &PacketFlags {
-        &self.flags
+    pub fn flags(&self) -> PacketFlags {
+        self.flags
     }
 
-    pub fn len(&self) -> &u32 {
-        &self.len
+    pub fn len(&self) -> u32 {
+        self.len
     }
 }
 
