@@ -16,6 +16,8 @@ pub enum Error {
     InvalidLength,
     /// Invalid UTF-8 encoding
     Utf8,
+    /// Invalid protocol level
+    InvalidProtocolLevel,
     /// Invalid connect flag value
     InvalidConnectFlag,
 }
@@ -28,6 +30,7 @@ impl Error {
             Error::RemainingLength => "malformed remaining length in header",
             Error::InvalidLength => "invalid buffer length",
             Error::Utf8 => "invalid utf-8 encoding",
+            Error::InvalidProtocolLevel => "invalid protocol level",
             Error::InvalidConnectFlag => "invalid connect flag value",
         }
     }

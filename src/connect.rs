@@ -20,6 +20,8 @@ use byteorder::{
 
 use bitfield::BitRange;
 
+pub const PROTOCOL_LEVEL_MQTT_3_1_1: u8 = 4;
+
 // VariableHeader for Connect packet
 #[derive(PartialEq, Debug)]
 pub struct Connect<'buf> {
@@ -99,6 +101,10 @@ impl<'buf> Connect<'buf> {
 
         // read protocol revision
         let (offset, level) = read!(parse_byte, bytes, offset);
+
+        if level != PROTOCOL_LEVEL_MQTT_3_1_1 {
+            return Err(error::Error::InvalidProtocolLevel)
+        }
 
         // read protocol flags
         let (offset, flags) = read!(parse_byte, bytes, offset);
