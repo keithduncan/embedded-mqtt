@@ -17,15 +17,18 @@ pub struct FixedHeader {
 
 impl FixedHeader {
     pub fn from_bytes(bytes: &[u8]) -> Result<Status<(usize, Self)>> {
-        // "bytes" must be at least 3 bytes long to be a valid fixed header
-        if bytes.len() < 3 {
-            return Ok(Status::Partial(3));
+        // "bytes" must be at least 2 bytes long to be a valid fixed header
+        if bytes.len() < 2 {
+            return Ok(Status::Partial(2 - bytes.len()));
         }
 
         let (r#type, flags) = parse_packet_type(bytes[0])?;
-        let (len, index) = complete!(parse_remaining_length(&bytes[1..]));
 
-        Ok(Status::Complete((index + 1, Self { r#type, flags, len })))
+        let offset = 1;
+
+        let (offset, len) = read!(parse_remaining_length, bytes, offset);
+
+        Ok(Status::Complete((offset, Self { r#type, flags, len })))
     }
 
     pub fn r#type(&self) -> &PacketType {
@@ -41,7 +44,7 @@ impl FixedHeader {
     }
 }
 
-fn parse_remaining_length(bytes: &[u8]) -> Result<Status<(u32, usize)>> {
+fn parse_remaining_length(bytes: &[u8]) -> Result<Status<(usize, u32)>> {
     let mut multiplier = 1;
     let mut value = 0u32;
     let mut index = 0;
@@ -63,7 +66,7 @@ fn parse_remaining_length(bytes: &[u8]) -> Result<Status<(u32, usize)>> {
         multiplier *= 128;
 
         if byte & 128 == 0 {
-            return Ok(Status::Complete((value, index)));
+            return Ok(Status::Complete((index, value)));
         }
     }
 }
@@ -245,11 +248,11 @@ mod tests {
             .into_par_iter()
             .map(|i| {
                 let mut buf = [0u8; 4];
-                let expected_index = encode_remaining_length(i, &mut buf);
-                let (len, index) =
-                    parse_remaining_length(&buf).expect(&format!("Failed for number: {}", i));
+                let expected_offset = encode_remaining_length(i, &mut buf);
+                let (offset, len) =
+                    parse_remaining_length(&buf).expect(&format!("Failed for number: {}", i)).unwrap();
                 assert_eq!(i, len);
-                assert_eq!(expected_index, index);
+                assert_eq!(expected_offset, offset);
                 0
             })
             .sum();
@@ -266,7 +269,7 @@ mod tests {
     fn bad_remaining_length2() {
         let buf = [0xFF, 0xFF];
         let result = parse_remaining_length(&buf);
-        assert_eq!(result, Err(Error::InvalidLength));
+        assert_eq!(result, Ok(Status::Partial(1)));
     }
 
     #[test]
@@ -300,7 +303,8 @@ mod tests {
 
     #[test]
     fn bad_len() {
-        let result = FixedHeader::from_bytes(&[03 << 4 | 0]).unwrap();
-        assert_eq!(result, Status::Partial);
+        let buf = [03 << 4 | 0];
+        let result = FixedHeader::from_bytes(&buf);
+        assert_eq!(result, Ok(Status::Partial(1)));
     }
 }

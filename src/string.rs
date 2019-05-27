@@ -52,23 +52,28 @@ mod tests {
         format,
     };
 
+    use byteorder::{
+        BigEndian,
+        ByteOrder,
+    };
+
     use byteorder::WriteBytesExt;
 
     #[test]
     fn small_buffer() {
-        assert_eq!(Status::Partial, parse_string(&[]).unwrap());
-        assert_eq!(Status::Partial, parse_string(&[0]).unwrap());
+        assert_eq!(Ok(Status::Partial(2)), parse_string(&[]));
+        assert_eq!(Ok(Status::Partial(1)), parse_string(&[0]));
 
         let mut buf = [0u8; 2];
         BigEndian::write_u16(&mut buf, 16);
-        assert_eq!(Status::Partial, parse_string(&buf).unwrap());
+        assert_eq!(Ok(Status::Partial(16)), parse_string(&buf));
     }
 
     #[test]
     fn empty_str() {
         let mut buf = [0u8; 2];
         BigEndian::write_u16(&mut buf, 0);
-        assert_eq!(Status::Complete((2, "")), parse_string(&buf).unwrap());
+        assert_eq!(Ok(Status::Complete((2, ""))), parse_string(&buf));
     }
 
     #[test]

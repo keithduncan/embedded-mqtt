@@ -18,7 +18,7 @@ pub fn parse_u8(bytes: &[u8]) -> Result<Status<(usize, u8)>> {
 
 pub fn parse_u16(bytes: &[u8]) -> Result<Status<(usize, u16)>> {
     if bytes.len() < 2 {
-        return Ok(Status::Partial(2))
+        return Ok(Status::Partial(2 - bytes.len()))
     }
 
     Ok(Status::Complete((2, BigEndian::read_u16(&bytes[0..2]))))
