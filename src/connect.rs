@@ -39,12 +39,12 @@ bitfield_bitrange! {
 impl Flags {
     bitfield_fields! {
         bool;
-        pub has_username, _       : 7;
-        pub has_password, _       : 6;
-        pub will_retain, _        : 5;
+        pub has_username, _  : 7;
+        pub has_password, _  : 6;
+        pub will_retain, _   : 5;
         
-        pub will_flag, _          : 2;
-        pub clean_session, _      : 1;
+        pub will_flag, _     : 2;
+        pub clean_session, _ : 1;
     }
 
     fn will_qos(&self) -> core::result::Result<qos::QoS, qos::Error> {
