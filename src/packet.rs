@@ -29,7 +29,7 @@ impl<'a> Packet<'a> {
                 Ok(Status::Partial(p)) => return Ok(Status::Partial(p)),
                 Ok(Status::Complete(x)) => x,
             };
-            let variable_header_consumed = variable_header_offset - fixed_header_offset;
+            let variable_header_consumed = variable_header_offset;
             #[cfg(feature = "std")]
             println!("variable_header_consumed {:?}", variable_header_consumed);
 
@@ -37,12 +37,12 @@ impl<'a> Packet<'a> {
             #[cfg(feature = "std")]
             println!("payload_len {:?}", payload_len);
 
-            let available = bytes.len() - variable_header_offset;
+            let available = bytes.len() - (fixed_header_offset + variable_header_offset);
             let needed = payload_len - min(available, payload_len);
             if needed > 0 {
                 return Ok(Status::Partial(needed));
             }
-            let payload = &bytes[variable_header_offset..variable_header_offset+payload_len];
+            let payload = &bytes[fixed_header_offset+variable_header_offset..fixed_header_offset+variable_header_offset+payload_len];
 
             (Some(variable_header), payload)
         } else {

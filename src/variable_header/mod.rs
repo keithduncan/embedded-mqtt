@@ -16,8 +16,8 @@ pub enum VariableHeader<'a> {
 macro_rules! from_bytes {
 	($fn:ident, $parser:path, $name:ident) => (
 		pub fn $fn(bytes: &'a [u8]) -> Result<Status<(usize, Self)>> {
-			let (offset, connect) = complete!($parser(bytes));
-			Ok(Status::Complete((offset, VariableHeader::$name(connect))))
+			let (offset, var_header) = complete!($parser(bytes));
+			Ok(Status::Complete((offset, VariableHeader::$name(var_header))))
 		}
 	)
 }

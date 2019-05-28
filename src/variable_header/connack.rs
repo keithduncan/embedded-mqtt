@@ -49,6 +49,9 @@ impl Connack {
         // read return code
         let (offset, return_code) = read!(decode::values::parse_u8, bytes, offset);
 
+        #[cfg(feature = "std")]
+        println!("connack::from_bytes {:?}", offset);
+
         Ok(Status::Complete((offset, Connack {
             flags,
             return_code,
