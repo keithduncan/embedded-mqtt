@@ -1,5 +1,5 @@
 use core::{
-	convert::TryFrom,
+	convert::{TryFrom, From},
 	result::Result,
 };
 
@@ -27,5 +27,15 @@ impl TryFrom<u8> for QoS {
 		};
 
 		Ok(qos)
+	}
+}
+
+impl From<QoS> for u8 {
+	fn from(qos: QoS) -> u8 {
+		match qos {
+			QoS::AtMostOnce  => 0b00,
+			QoS::AtLeastOnce => 0b01,
+			QoS::ExactlyOnce => 0b10,
+		}
 	}
 }
