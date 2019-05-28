@@ -95,7 +95,7 @@ mod tests {
         let mut buf = Cursor::new(Vec::new());
         buf.write_u16::<BigEndian>(inp.len() as u16).unwrap();
         buf.write(&inp).unwrap();
-        assert_eq!(Err(Error::Utf8), parse_string(buf.get_ref().as_ref()));
+        assert_eq!(Err(ParseError::Utf8), parse_string(buf.get_ref().as_ref()));
     }
 
     #[test]
@@ -104,6 +104,6 @@ mod tests {
         let mut buf = Cursor::new(Vec::new());
         buf.write_u16::<BigEndian>(inp.len() as u16).unwrap();
         buf.write(inp.as_bytes()).unwrap();
-        assert_eq!(Err(Error::Utf8), parse_string(buf.get_ref().as_ref()));
+        assert_eq!(Err(ParseError::Utf8), parse_string(buf.get_ref().as_ref()));
     }
 }

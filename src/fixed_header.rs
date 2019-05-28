@@ -294,9 +294,9 @@ mod tests {
         ];
         let (offset, header) = FixedHeader::from_bytes(&buf).unwrap().unwrap();
         assert_eq!(offset, 2);
-        assert_eq!(*header.r#type(), PacketType::Connect);
-        assert_eq!(*header.flags(), 0);
-        assert_eq!(*header.len(), 0);
+        assert_eq!(header.r#type(), PacketType::Connect);
+        assert_eq!(header.flags(), 0);
+        assert_eq!(header.len(), 0);
     }
 
     #[test]
@@ -310,9 +310,9 @@ mod tests {
         ];
         let (offset, header) = FixedHeader::from_bytes(&buf).unwrap().unwrap();
         assert_eq!(offset, 5);
-        assert_eq!(*header.r#type(), PacketType::Publish);
-        assert_eq!(*header.flags(), 0);
-        assert_eq!(*header.len(), 2097152);
+        assert_eq!(header.r#type(), PacketType::Publish);
+        assert_eq!(header.flags(), 0);
+        assert_eq!(header.len(), 2097152);
     }
 
     #[test]
