@@ -90,9 +90,6 @@ impl Connack {
         let (offset, return_code) = read!(codec::values::parse_u8, bytes, offset);
         let return_code = return_code.try_into().map_err(|_| ParseError::InvalidConnackReturnCode)?;
 
-        #[cfg(feature = "std")]
-        println!("connack::from_bytes {:?}", offset);
-
         Ok(Status::Complete((offset, Connack {
             flags,
             return_code,
