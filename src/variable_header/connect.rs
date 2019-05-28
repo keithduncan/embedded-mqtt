@@ -63,7 +63,7 @@ pub struct Connect<'buf> {
 }
 
 impl<'buf> Connect<'buf> {
-    pub fn from_bytes(bytes: &[u8]) -> Result<Status<(usize, Connect)>> {
+    pub fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, Self)>> {
         let offset = 0;
 
         // read protocol name
