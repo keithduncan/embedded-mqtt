@@ -45,7 +45,6 @@ pub fn parse_string(bytes: &[u8]) -> Result<Status<(usize, &str)>, ParseError> {
     Ok(Status::Complete(((2 + string_len) as usize, val)))
 }
 
-#[allow(dead_code)]
 pub fn encode_string(string: &str, bytes: &mut [u8]) -> Result<usize, EncodeError> {
     let size = match u16::try_from(string.len()) {
         Err(_) => return Err(EncodeError::ValueTooBig),

@@ -7,16 +7,15 @@ use core::{
 use crate::{
     codec,
     status::Status,
-    error::ParseError,
+    error::{ParseError, EncodeError},
     qos,
 };
 
 use bitfield::BitRange;
 
-#[repr(u8)]
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum Level {
-    Level3_1_1 = 4,
+    Level3_1_1,
 }
 
 impl TryFrom<u8> for Level {
@@ -26,6 +25,14 @@ impl TryFrom<u8> for Level {
             Ok(Level::Level3_1_1)
         } else {
             Err(())
+        }
+    }
+}
+
+impl From<Level> for u8 {
+    fn from(val: Level) -> u8 {
+        match val {
+            Level::Level3_1_1 => 4,
         }
     }
 }
@@ -56,6 +63,12 @@ impl Flags {
     #[allow(dead_code)]
     fn set_will_qos(&mut self, qos: qos::QoS) {
         self.set_bit_range(4, 3, u8::from(qos))
+    }
+}
+
+impl From<Flags> for u8 {
+    fn from(val: Flags) -> u8 {
+        val.0
     }
 }
 
@@ -124,6 +137,14 @@ impl<'buf> Connect<'buf> {
             flags,
             keep_alive,
         })))
+    }
+
+    pub fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+        let offset = codec::string::encode_string(self.name, bytes)?;
+        let offset = codec::values::encode_u8(self.level.into(), &mut bytes[offset..])?;
+        let offset = codec::values::encode_u8(self.flags.into(), &mut bytes[offset..])?;
+        let offset = codec::values::encode_u16(self.keep_alive, &mut bytes[offset..])?;
+        Ok(offset)
     }
 
     pub fn name(&self) -> &str {
