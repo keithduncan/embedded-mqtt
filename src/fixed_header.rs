@@ -1,7 +1,8 @@
 use core::result::Result;
 
 use crate::{
-    error::ParseError,
+    codec,
+    error::{ParseError, EncodeError},
     status::Status,
 };
 
@@ -27,9 +28,9 @@ pub type PacketFlags = u8;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct FixedHeader {
-    r#type: PacketType,
-    flags: PacketFlags,
-    len: u32,
+    pub r#type: PacketType,
+    pub flags: PacketFlags,
+    pub len: u32,
 }
 
 impl FixedHeader {
@@ -46,6 +47,21 @@ impl FixedHeader {
         let (offset, len) = read!(parse_remaining_length, bytes, offset);
 
         Ok(Status::Complete((offset, Self { r#type, flags, len })))
+    }
+
+    pub fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+        let offset = 0;
+        let offset = {
+            let o = codec::values::encode_u8(encode_packet_type(self.r#type, self.flags), &mut bytes[offset..])?;
+            offset + o
+        };
+        let offset = {
+            let mut remaining_length = [0u8; 4];
+            let o = encode_remaining_length(self.len, &mut remaining_length);
+            (&mut bytes[offset..offset+o]).copy_from_slice(&remaining_length[..]);
+            offset + o
+        };
+        Ok(offset)
     }
 
     pub fn r#type(&self) -> PacketType {
@@ -88,7 +104,6 @@ fn parse_remaining_length(bytes: &[u8]) -> Result<Status<(usize, u32)>, ParseErr
     }
 }
 
-#[allow(dead_code)]
 fn encode_remaining_length(mut len: u32, buf: &mut [u8; 4]) -> usize {
     let mut index = 0;
     loop {
@@ -109,27 +124,48 @@ fn encode_remaining_length(mut len: u32, buf: &mut [u8; 4]) -> usize {
 fn parse_packet_type(inp: u8) -> Result<(PacketType, PacketFlags), ParseError> {
     // high 4 bits are the packet type
     let packet_type = match (inp & 0xF0) >> 4 {
-        1 => Ok(PacketType::Connect),
-        2 => Ok(PacketType::Connack),
-        3 => Ok(PacketType::Publish),
-        4 => Ok(PacketType::Puback),
-        5 => Ok(PacketType::Pubrec),
-        6 => Ok(PacketType::Pubrel),
-        7 => Ok(PacketType::Pubcomp),
-        8 => Ok(PacketType::Subscribe),
-        9 => Ok(PacketType::Suback),
-        10 => Ok(PacketType::Unsubscribe),
-        11 => Ok(PacketType::Unsuback),
-        12 => Ok(PacketType::Pingreq),
-        13 => Ok(PacketType::Pingresp),
-        14 => Ok(PacketType::Disconnect),
-        _ => Err(ParseError::PacketType),
-    }?;
+        1 => PacketType::Connect,
+        2 => PacketType::Connack,
+        3 => PacketType::Publish,
+        4 => PacketType::Puback,
+        5 => PacketType::Pubrec,
+        6 => PacketType::Pubrel,
+        7 => PacketType::Pubcomp,
+        8 => PacketType::Subscribe,
+        9 => PacketType::Suback,
+        10 => PacketType::Unsubscribe,
+        11 => PacketType::Unsuback,
+        12 => PacketType::Pingreq,
+        13 => PacketType::Pingresp,
+        14 => PacketType::Disconnect,
+        _ => return Err(ParseError::PacketType),
+    };
 
     // low 4 bits represent control flags
     let flags = inp & 0xF;
 
     validate_flag(packet_type, flags)
+}
+
+fn encode_packet_type(r#type: PacketType, flags: PacketFlags) -> u8 {
+    let packet_type: u8 = match r#type {
+        PacketType::Connect => 1,
+        PacketType::Connack => 2,
+        PacketType::Publish => 3,
+        PacketType::Puback => 4,
+        PacketType::Pubrec => 5,
+        PacketType::Pubrel => 6,
+        PacketType::Pubcomp => 7,
+        PacketType::Subscribe =>8,
+        PacketType::Suback => 9,
+        PacketType::Unsubscribe => 10,
+        PacketType::Unsuback => 11,
+        PacketType::Pingreq => 12,
+        PacketType::Pingresp => 13,
+        PacketType::Disconnect => 14,
+    };
+
+    (packet_type << 4) | flags
 }
 
 fn validate_flag(packet_type: PacketType, flags: PacketFlags) -> Result<(PacketType, PacketFlags), ParseError> {

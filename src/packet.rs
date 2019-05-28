@@ -7,7 +7,7 @@ use crate::{
     fixed_header::FixedHeader,
     variable_header::VariableHeader,
     status::Status,
-    error::ParseError,
+    error::{ParseError, EncodeError},
 };
 
 pub type PacketId = u16;
@@ -60,5 +60,30 @@ impl<'a> Packet<'a> {
             variable_header,
             payload,
         })))
+    }
+
+    pub fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+        let mut offset = 0;
+
+        offset = {
+            let o = self.fixed_header.to_bytes(&mut bytes[offset..])?;
+            offset + o
+        };
+
+        if let Some(ref variable_header) = self.variable_header {
+            offset = {
+                let o = variable_header.to_bytes(&mut bytes[offset..])?;
+                offset + o
+            };
+        }
+
+        let payload_size = self.payload.len();
+        if offset + payload_size > bytes.len() {
+            return Err(EncodeError::OutOfSpace)
+        }
+
+        (&mut bytes[offset..offset + payload_size as usize]).copy_from_slice(self.payload);
+
+        Ok(offset + payload_size)
     }
 }

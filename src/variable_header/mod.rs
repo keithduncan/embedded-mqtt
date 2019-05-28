@@ -3,7 +3,7 @@ use core::result::Result;
 use crate::{
     status::Status,
     fixed_header::PacketType,
-    error::ParseError,
+    error::{ParseError, EncodeError},
 };
 
 pub mod connect;
@@ -16,8 +16,6 @@ pub enum VariableHeader<'a> {
 	Connack(connack::Connack),
 	Suback(suback::Suback),
 }
-
-
 
 macro_rules! from_bytes {
 	($fn:ident, $parser:path, $name:ident) => (
@@ -41,4 +39,11 @@ impl<'a> VariableHeader<'a> {
 	from_bytes!(connect, connect::Connect::from_bytes, Connect);
 	from_bytes!(connack, connack::Connack::from_bytes, Connack);
 	from_bytes!(suback,  suback::Suback::from_bytes,   Suback);
+
+	pub fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+		match self {
+			&VariableHeader::Connect(ref conn) => conn.to_bytes(bytes),
+			_ => unimplemented!(),
+		}
+	}
 }
