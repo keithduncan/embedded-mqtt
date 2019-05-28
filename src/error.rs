@@ -60,3 +60,30 @@ impl From<Utf8Error> for ParseError {
         ParseError::Utf8
     }
 }
+
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub enum EncodeError {
+    /// Not enough space in buffer to encode
+    OutOfSpace,
+}
+
+impl EncodeError {
+    fn desc(&self) -> &'static str {
+        match *self {
+            EncodeError::OutOfSpace => "not enough space in encode buffer",
+        }
+    }
+}
+
+impl fmt::Display for EncodeError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str(self.desc())
+    }
+}
+
+#[cfg(feature = "std")]
+impl ::std::error::Error for EncodeError {
+    fn description(&self) -> &str {
+        self.desc()
+    }
+}
