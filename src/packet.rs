@@ -19,39 +19,44 @@ pub struct Packet<'a> {
 
 impl<'a> Packet<'a> {
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Status<(usize, Self)>> {
-        let offset = 0;
-
-        let (offset, fixed_header) = read!(FixedHeader::from_bytes, bytes, offset);
+        let (fixed_header_offset, fixed_header) = read!(FixedHeader::from_bytes, bytes, 0);
 
         // TODO this is only duplicated while not all types have their
         // variable header parsed.
-        let (variable_header, payload) = if let Some(result) = VariableHeader::from_bytes(fixed_header.r#type(), bytes) {
-            let (offset, variable_header) = match result {
+        let (variable_header, payload) = if let Some(result) = VariableHeader::from_bytes(fixed_header.r#type(), &bytes[fixed_header_offset..]) {
+            let (variable_header_offset, variable_header) = match result {
                 Err(e) => return Err(e),
                 Ok(Status::Partial(p)) => return Ok(Status::Partial(p)),
                 Ok(Status::Complete(x)) => x,
             };
+            let variable_header_consumed = variable_header_offset - fixed_header_offset;
+            #[cfg(feature = "std")]
+            println!("variable_header_consumed {:?}", variable_header_consumed);
 
-            let available = bytes.len() - offset;
-            let needed = fixed_header.len() as usize - min(available, fixed_header.len() as usize);
+            let payload_len = fixed_header.len() as usize - variable_header_consumed;
+            #[cfg(feature = "std")]
+            println!("payload_len {:?}", payload_len);
+
+            let available = bytes.len() - variable_header_offset;
+            let needed = payload_len - min(available, payload_len);
             if needed > 0 {
                 return Ok(Status::Partial(needed));
             }
-            let payload = &bytes[offset..offset+fixed_header.len() as usize];
+            let payload = &bytes[variable_header_offset..variable_header_offset+payload_len];
 
             (Some(variable_header), payload)
         } else {
-            let available = bytes.len() - offset;
+            let available = bytes.len() - fixed_header_offset;
             let needed = fixed_header.len() as usize - min(available, fixed_header.len() as usize);
             if needed > 0 {
                 return Ok(Status::Partial(needed));
             }
-            let payload = &bytes[offset..offset+fixed_header.len() as usize];
+            let payload = &bytes[fixed_header_offset..fixed_header_offset+fixed_header.len() as usize];
 
             (None, payload)
         };
 
-        Ok(Status::Complete((offset + fixed_header.len() as usize, Packet {
+        Ok(Status::Complete((fixed_header_offset + fixed_header.len() as usize, Packet {
             fixed_header,
             variable_header,
             payload,
