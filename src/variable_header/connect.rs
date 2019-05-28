@@ -1,6 +1,6 @@
 use core::{
     fmt::Debug,
-    convert::TryInto,
+    convert::{TryInto, TryFrom, From},
     result::Result,
 };
 
@@ -13,7 +13,22 @@ use crate::{
 
 use bitfield::BitRange;
 
-pub const PROTOCOL_LEVEL_MQTT_3_1_1: u8 = 4;
+#[repr(u8)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+pub enum Level {
+    Level3_1_1 = 4,
+}
+
+impl TryFrom<u8> for Level {
+    type Error = ();
+    fn try_from(val: u8) -> Result<Self, Self::Error> {
+        if val == 4 {
+            Ok(Level::Level3_1_1)
+        } else {
+            Err(())
+        }
+    }
+}
 
 #[derive(PartialEq, Clone, Copy, Default)]
 pub struct Flags(u8);
@@ -60,7 +75,7 @@ impl Debug for Flags {
 #[derive(PartialEq, Debug)]
 pub struct Connect<'buf> {
     name: &'buf str,
-    level: u8,
+    level: Level,
     flags: Flags,
     keep_alive: u16,
 }
@@ -75,7 +90,8 @@ impl<'buf> Connect<'buf> {
         // read protocol revision
         let (offset, level) = read!(codec::values::parse_u8, bytes, offset);
 
-        if level != PROTOCOL_LEVEL_MQTT_3_1_1 {
+        let level = level.try_into().map_err(|_| ParseError::InvalidProtocolLevel)?;
+        if level != Level::Level3_1_1 {
             return Err(ParseError::InvalidProtocolLevel)
         }
 
@@ -105,7 +121,7 @@ impl<'buf> Connect<'buf> {
         self.name
     }
 
-    pub fn level(&self) -> u8 {
+    pub fn level(&self) -> Level {
         self.level
     }
 
