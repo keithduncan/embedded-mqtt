@@ -30,12 +30,8 @@ impl<'a> Packet<'a> {
                 Ok(Status::Complete(x)) => x,
             };
             let variable_header_consumed = variable_header_offset;
-            #[cfg(feature = "std")]
-            println!("variable_header_consumed {:?}", variable_header_consumed);
 
             let payload_len = fixed_header.len() as usize - variable_header_consumed;
-            #[cfg(feature = "std")]
-            println!("payload_len {:?}", payload_len);
 
             let available = bytes.len() - (fixed_header_offset + variable_header_offset);
             let needed = payload_len - min(available, payload_len);

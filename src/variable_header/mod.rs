@@ -6,12 +6,16 @@ use crate::{
 
 pub mod connect;
 pub mod connack;
+pub mod suback;
 
 #[derive(Debug)]
 pub enum VariableHeader<'a> {
 	Connect(connect::Connect<'a>),
 	Connack(connack::Connack),
+	Suback(suback::Suback),
 }
+
+
 
 macro_rules! from_bytes {
 	($fn:ident, $parser:path, $name:ident) => (
@@ -27,10 +31,12 @@ impl<'a> VariableHeader<'a> {
 		match r#type {
 			PacketType::Connect => Some(VariableHeader::connect(bytes)),
 			PacketType::Connack => Some(VariableHeader::connack(bytes)),
+			PacketType::Suback  => Some(VariableHeader::suback(bytes)),
 			_ => None,
 		}
 	}
 
 	from_bytes!(connect, connect::Connect::from_bytes, Connect);
 	from_bytes!(connack, connack::Connack::from_bytes, Connack);
+	from_bytes!(suback,  suback::Suback::from_bytes,   Suback);
 }
