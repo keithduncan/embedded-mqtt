@@ -81,6 +81,15 @@ pub struct Connect<'buf> {
 }
 
 impl<'buf> Connect<'buf> {
+    pub fn new(name: &'buf str, level: Level, flags: Flags, keep_alive: u16) -> Self {
+        Connect {
+            name,
+            level,
+            flags,
+            keep_alive
+        }
+    }
+
     pub fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, Self)>, ParseError> {
         let offset = 0;
 
