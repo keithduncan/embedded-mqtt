@@ -2,9 +2,13 @@ use crate::{
     decode,
     status::Status,
     result::Result,
+    error::Error,
 };
 
-use core::fmt::Debug;
+use core::{
+    fmt::Debug,
+    convert::{TryFrom, TryInto},
+};
 
 #[derive(PartialEq, Clone, Copy)]
 pub struct Flags(u8);
@@ -27,11 +31,47 @@ impl Debug for Flags {
     }
 }
 
+impl TryFrom<u8> for Flags {
+    type Error = ();
+    fn try_from(from: u8) -> core::result::Result<Flags, ()> {
+        if 0b11111110 & from != 0 {
+            Err(())
+        } else {
+            Ok(Flags(from))
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+pub enum ReturnCode {
+    Accepted,
+    RefusedProtocolVersion,
+    RefusedClientIdentifier,
+    RefusedServerUnavailable,
+    RefusedUsernameOrPassword,
+    RefusedNotAuthorized,
+}
+
+impl TryFrom<u8> for ReturnCode {
+    type Error = ();
+    fn try_from(from: u8) -> core::result::Result<ReturnCode, ()> {
+        Ok(match from {
+            0 => ReturnCode::Accepted,
+            1 => ReturnCode::RefusedProtocolVersion,
+            2 => ReturnCode::RefusedClientIdentifier,
+            3 => ReturnCode::RefusedServerUnavailable,
+            4 => ReturnCode::RefusedUsernameOrPassword,
+            5 => ReturnCode::RefusedNotAuthorized,
+            _ => return Err(()),
+        })
+    }
+}
+
 // VariableHeader for Connack packet
 #[derive(PartialEq, Debug)]
 pub struct Connack {
     flags: Flags,
-    return_code: u8,
+    return_code: ReturnCode,
 }
 
 impl Connack {
@@ -44,10 +84,11 @@ impl Connack {
 
         // read connack flags
         let (offset, flags) = read!(decode::values::parse_u8, bytes, offset);
-        let flags = Flags(flags);
+        let flags = flags.try_into().map_err(|_| Error::InvalidConnackFlag)?;
 
         // read return code
         let (offset, return_code) = read!(decode::values::parse_u8, bytes, offset);
+        let return_code = return_code.try_into().map_err(|_| Error::InvalidConnackReturnCode)?;
 
         #[cfg(feature = "std")]
         println!("connack::from_bytes {:?}", offset);
@@ -62,7 +103,7 @@ impl Connack {
         self.flags
     }
 
-    pub fn return_code(&self) -> u8 {
+    pub fn return_code(&self) -> ReturnCode {
         self.return_code
     }
 }

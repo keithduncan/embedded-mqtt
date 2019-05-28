@@ -20,6 +20,10 @@ pub enum Error {
     InvalidProtocolLevel,
     /// Invalid connect flag value
     InvalidConnectFlag,
+    /// Invalid Connack flag
+    InvalidConnackFlag,
+    /// Invalid Connack Return Code
+    InvalidConnackReturnCode,
 }
 
 impl Error {
@@ -32,6 +36,8 @@ impl Error {
             Error::Utf8 => "invalid utf-8 encoding",
             Error::InvalidProtocolLevel => "invalid protocol level",
             Error::InvalidConnectFlag => "invalid connect flag value",
+            Error::InvalidConnackFlag => "invalid connack flag value",
+            Error::InvalidConnackReturnCode => "invalid connack return code",
         }
     }
 }

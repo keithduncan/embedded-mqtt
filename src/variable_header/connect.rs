@@ -8,9 +8,7 @@ use crate::{
 
 use core::{
     fmt::Debug,
-    convert::{
-        TryInto,
-    },
+    convert::TryInto,
 };
 
 use bitfield::BitRange;
