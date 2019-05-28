@@ -7,7 +7,7 @@ authors = ["Rajasekharan Vengalil <avranju@gmail.com>"]
 std = []
 
 [dependencies]
-byteorder = "1.2"
+byteorder = { version = "1.2", default-features = false }
 bitfield = "0.13.1"
 
 [dev-dependencies]
