@@ -12,9 +12,9 @@ pub type PacketId = u16;
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct Packet<'a> {
-    fixed_header: FixedHeader,
-    variable_header: Option<VariableHeader<'a>>,
-    payload: &'a [u8],
+    pub fixed_header: FixedHeader,
+    pub variable_header: Option<VariableHeader<'a>>,
+    pub payload: &'a [u8],
 }
 
 impl<'a> Packet<'a> {
