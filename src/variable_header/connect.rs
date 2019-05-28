@@ -15,7 +15,7 @@ use bitfield::BitRange;
 
 pub const PROTOCOL_LEVEL_MQTT_3_1_1: u8 = 4;
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Clone, Copy, Default)]
 pub struct Flags(u8);
 
 bitfield_bitrange! {
@@ -25,17 +25,22 @@ bitfield_bitrange! {
 impl Flags {
     bitfield_fields! {
         bool;
-        pub has_username, _  : 7;
-        pub has_password, _  : 6;
-        pub will_retain, _   : 5;
+        pub has_username,  set_has_username  : 7;
+        pub has_password,  set_has_password  : 6;
+        pub will_retain,   set_will_retain   : 5;
         
-        pub will_flag, _     : 2;
-        pub clean_session, _ : 1;
+        pub will_flag,     set_will_flag     : 2;
+        pub clean_session, set_clean_session : 1;
     }
 
     fn will_qos(&self) -> Result<qos::QoS, qos::Error> {
         let qos_bits: u8 = self.bit_range(4, 3);
         qos_bits.try_into()
+    }
+
+    #[allow(dead_code)]
+    fn set_will_qos(&mut self, qos: qos::QoS) {
+        self.set_bit_range(4, 3, u8::from(qos))
     }
 }
 
