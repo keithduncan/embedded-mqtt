@@ -27,7 +27,7 @@ pub struct Connect<'buf> {
     keep_alive: u16,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone, Copy)]
 pub struct Flags(u8);
 
 bitfield_bitrange! {
@@ -103,16 +103,16 @@ impl<'buf> Connect<'buf> {
         self.name
     }
 
-    pub fn level(&self) -> &u8 {
-        &self.level
+    pub fn level(&self) -> u8 {
+        self.level
     }
 
-    pub fn flags(&self) -> &Flags {
-        &self.flags
+    pub fn flags(&self) -> Flags {
+        self.flags
     }
 
-    pub fn keep_alive(&self) -> &u16 {
-        &self.keep_alive
+    pub fn keep_alive(&self) -> u16 {
+        self.keep_alive
     }
 }
 
