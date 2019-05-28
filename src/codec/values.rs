@@ -36,7 +36,6 @@ pub fn parse_u16(bytes: &[u8]) -> Result<Status<(usize, u16)>, ParseError> {
     Ok(Status::Complete((2, BigEndian::read_u16(&bytes[0..2]))))
 }
 
-#[allow(dead_code)]
 pub fn encode_u16(value: u16, bytes: &mut [u8]) -> Result<usize, EncodeError> {
     if bytes.len() < 2 {
         return Err(EncodeError::OutOfSpace)

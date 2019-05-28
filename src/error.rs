@@ -65,12 +65,15 @@ impl From<Utf8Error> for ParseError {
 pub enum EncodeError {
     /// Not enough space in buffer to encode
     OutOfSpace,
+    /// Value too big for field
+    ValueTooBig,
 }
 
 impl EncodeError {
     fn desc(&self) -> &'static str {
         match *self {
             EncodeError::OutOfSpace => "not enough space in encode buffer",
+            EncodeError::ValueTooBig => "value too big to ever be encoded"
         }
     }
 }

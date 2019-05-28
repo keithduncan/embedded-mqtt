@@ -2,11 +2,12 @@ use core::{
     result::Result,
     str,
     cmp::min,
+    convert::TryFrom,
 };
 
 use crate::{
 	status::Status,
-	error::ParseError,
+	error::{ParseError, EncodeError},
 };
 
 use super::values;
@@ -42,6 +43,23 @@ pub fn parse_string(bytes: &[u8]) -> Result<Status<(usize, &str)>, ParseError> {
     }
     
     Ok(Status::Complete(((2 + string_len) as usize, val)))
+}
+
+#[allow(dead_code)]
+pub fn encode_string(string: &str, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+    let size = match u16::try_from(string.len()) {
+        Err(_) => return Err(EncodeError::ValueTooBig),
+        Ok(s) => s,
+    };
+
+    if bytes.len() < (2 + size) as usize {
+        return Err(EncodeError::OutOfSpace)
+    }
+
+    values::encode_u16(size, &mut bytes[0..2])?;
+    (&mut bytes[2..2 + size as usize]).copy_from_slice(string.as_bytes());
+
+    Ok(2 + size as usize)
 }
 
 #[cfg(test)]
