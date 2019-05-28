@@ -2,7 +2,8 @@
 
 #![deny(warnings)]
 
-#[cfg(test)]
+#[cfg(any(feature = "std", test))]
+#[macro_use]
 extern crate std;
 #[cfg(test)]
 extern crate rayon;
