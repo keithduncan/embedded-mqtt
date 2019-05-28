@@ -1,5 +1,5 @@
 use crate::{
-    decode,
+    codec,
     status::Status,
     result::Result,
 };
@@ -19,7 +19,7 @@ impl Suback {
         let offset = 0;
 
         // read connack flags
-        let (offset, packet_identifier) = read!(decode::values::parse_u16, bytes, offset);
+        let (offset, packet_identifier) = read!(codec::values::parse_u16, bytes, offset);
 
         Ok(Status::Complete((offset, Suback {
             packet_identifier,

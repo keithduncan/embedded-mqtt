@@ -18,7 +18,7 @@ pub mod status;
 pub mod result;
 pub mod error;
 
-mod decode;
+mod codec;
 
 pub mod fixed_header;
 pub mod variable_header;

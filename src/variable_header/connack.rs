@@ -1,5 +1,5 @@
 use crate::{
-    decode,
+    codec,
     status::Status,
     result::Result,
     error::Error,
@@ -83,11 +83,11 @@ impl Connack {
         let offset = 0;
 
         // read connack flags
-        let (offset, flags) = read!(decode::values::parse_u8, bytes, offset);
+        let (offset, flags) = read!(codec::values::parse_u8, bytes, offset);
         let flags = flags.try_into().map_err(|_| Error::InvalidConnackFlag)?;
 
         // read return code
-        let (offset, return_code) = read!(decode::values::parse_u8, bytes, offset);
+        let (offset, return_code) = read!(codec::values::parse_u8, bytes, offset);
         let return_code = return_code.try_into().map_err(|_| Error::InvalidConnackReturnCode)?;
 
         #[cfg(feature = "std")]
