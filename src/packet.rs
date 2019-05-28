@@ -1,10 +1,7 @@
 use core::cmp::min;
 
 use crate::{
-    fixed_header::{
-        PacketType,
-        FixedHeader,
-    },
+    fixed_header::FixedHeader,
     variable_header::VariableHeader,
     result::Result,
     status::Status,
@@ -28,8 +25,12 @@ impl<'a> Packet<'a> {
 
         // TODO this is only duplicated while not all types have their
         // variable header parsed.
-        let (variable_header, payload) = if fixed_header.r#type() == PacketType::Connect {
-            let (offset, variable_header) = read!(VariableHeader::connect, bytes, offset);
+        let (variable_header, payload) = if let Some(result) = VariableHeader::from_bytes(fixed_header.r#type(), bytes) {
+            let (offset, variable_header) = match result {
+                Err(e) => return Err(e),
+                Ok(Status::Partial(p)) => return Ok(Status::Partial(p)),
+                Ok(Status::Complete(x)) => x,
+            };
 
             let available = bytes.len() - offset;
             let needed = fixed_header.len() as usize - min(available, fixed_header.len() as usize);

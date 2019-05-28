@@ -1,6 +1,7 @@
 use crate::{
     status::Status,
     result::Result,
+    fixed_header::PacketType,
 };
 
 pub mod connect;
@@ -22,6 +23,14 @@ macro_rules! from_bytes {
 }
 
 impl<'a> VariableHeader<'a> {
+	pub fn from_bytes(r#type: PacketType, bytes: &'a [u8]) -> Option<Result<Status<(usize, Self)>>> {
+		match r#type {
+			PacketType::Connect => Some(VariableHeader::connect(bytes)),
+			PacketType::Connack => Some(VariableHeader::connack(bytes)),
+			_ => None,
+		}
+	}
+
 	from_bytes!(connect, connect::Connect::from_bytes, Connect);
 	from_bytes!(connack, connack::Connack::from_bytes, Connack);
 }
