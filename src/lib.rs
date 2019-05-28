@@ -12,15 +12,15 @@ extern crate byteorder;
 #[macro_use]
 extern crate bitfield;
 
-pub mod error;
 #[macro_use]
 pub mod status;
+pub mod result;
+pub mod error;
+
+mod decode;
+
 pub mod fixed_header;
 pub mod variable_header;
-pub mod connect;
 pub mod packet;
-pub mod result;
-pub mod qos;
 
-mod decoder;
-mod string;
+pub mod qos;

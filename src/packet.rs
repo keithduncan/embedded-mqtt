@@ -1,6 +1,4 @@
-use core::{
-    cmp::min,
-};
+use core::cmp::min;
 
 use crate::{
     fixed_header::{

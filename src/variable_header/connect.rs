@@ -1,10 +1,9 @@
 use crate::{
-    string,
+    decode,
     status::Status,
     result::Result,
     error,
     qos,
-    decoder,
 };
 
 use core::{
@@ -68,17 +67,17 @@ impl<'buf> Connect<'buf> {
         let offset = 0;
 
         // read protocol name
-        let (offset, name) = read!(string::parse_string, bytes, offset);
+        let (offset, name) = read!(decode::string::parse_string, bytes, offset);
 
         // read protocol revision
-        let (offset, level) = read!(decoder::parse_u8, bytes, offset);
+        let (offset, level) = read!(decode::values::parse_u8, bytes, offset);
 
         if level != PROTOCOL_LEVEL_MQTT_3_1_1 {
             return Err(error::Error::InvalidProtocolLevel)
         }
 
         // read protocol flags
-        let (offset, flags) = read!(decoder::parse_u8, bytes, offset);
+        let (offset, flags) = read!(decode::values::parse_u8, bytes, offset);
 
         let flags = Flags(flags);
 
@@ -89,7 +88,7 @@ impl<'buf> Connect<'buf> {
         }
 
         // read protocol keep alive
-        let (offset, keep_alive) = read!(decoder::parse_u16, bytes, offset);
+        let (offset, keep_alive) = read!(decode::values::parse_u16, bytes, offset);
 
         Ok(Status::Complete((offset, Connect {
             name,

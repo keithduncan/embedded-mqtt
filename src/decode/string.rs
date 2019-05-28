@@ -7,13 +7,14 @@ use crate::{
 	status::Status,
 	error::Error,
 	result::Result,
-    decoder,
 };
+
+use super::values;
 
 pub fn parse_string(bytes: &[u8]) -> Result<Status<(usize, &str)>> {
     let offset = 0;
 
-    let (offset, string_len) = read!(decoder::parse_u16, bytes, offset);
+    let (offset, string_len) = read!(values::parse_u16, bytes, offset);
 
     let available = bytes.len() - offset;
 
