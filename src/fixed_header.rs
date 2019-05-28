@@ -58,7 +58,7 @@ impl FixedHeader {
         let offset = {
             let mut remaining_length = [0u8; 4];
             let o = encode_remaining_length(self.len, &mut remaining_length);
-            (&mut bytes[offset..offset+o]).copy_from_slice(&remaining_length[..]);
+            (&mut bytes[offset..offset+o]).copy_from_slice(&remaining_length[..o]);
             offset + o
         };
         Ok(offset)

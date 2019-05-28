@@ -140,10 +140,23 @@ impl<'buf> Connect<'buf> {
     }
 
     pub fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
-        let offset = codec::string::encode_string(self.name, bytes)?;
-        let offset = codec::values::encode_u8(self.level.into(), &mut bytes[offset..])?;
-        let offset = codec::values::encode_u8(self.flags.into(), &mut bytes[offset..])?;
-        let offset = codec::values::encode_u16(self.keep_alive, &mut bytes[offset..])?;
+        let offset = 0;
+        let offset = {
+            let o = codec::string::encode_string(self.name, &mut bytes[offset..])?;
+            (offset + o)
+        };
+        let offset = {
+            let o = codec::values::encode_u8(self.level.into(), &mut bytes[offset..])?;
+            (offset + o)
+        };
+        let offset = {
+            let o = codec::values::encode_u8(self.flags.into(), &mut bytes[offset..])?;
+            (offset + o)
+        };
+        let offset = {
+            let o = codec::values::encode_u16(self.keep_alive, &mut bytes[offset..])?;
+            (offset + o)
+        };
         Ok(offset)
     }
 

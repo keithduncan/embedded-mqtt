@@ -70,6 +70,9 @@ impl<'a> Packet<'a> {
             offset + o
         };
 
+        #[cfg(feature = "std")]
+        println!("fixed_header offset {:?}", offset);
+
         if let Some(ref variable_header) = self.variable_header {
             offset = {
                 let o = variable_header.to_bytes(&mut bytes[offset..])?;
@@ -77,13 +80,23 @@ impl<'a> Packet<'a> {
             };
         }
 
-        let payload_size = self.payload.len();
-        if offset + payload_size > bytes.len() {
-            return Err(EncodeError::OutOfSpace)
-        }
+        #[cfg(feature = "std")]
+        println!("variable_header offset {:?}", offset);
 
-        (&mut bytes[offset..offset + payload_size as usize]).copy_from_slice(self.payload);
+        let offset = {
+            let payload_size = self.payload.len();
+            if offset + payload_size > bytes.len() {
+                return Err(EncodeError::OutOfSpace)
+            }
 
-        Ok(offset + payload_size)
+            (&mut bytes[offset..offset + payload_size as usize]).copy_from_slice(self.payload);
+
+            (offset + payload_size)
+        };
+
+        #[cfg(feature = "std")]
+        println!("payload offset {:?}", offset);
+
+        Ok(offset)
     }
 }
