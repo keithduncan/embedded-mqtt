@@ -16,6 +16,7 @@ pub mod error;
 #[macro_use]
 pub mod status;
 pub mod fixed_header;
+pub mod variable_header;
 pub mod connect;
 pub mod packet;
 pub mod result;

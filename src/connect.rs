@@ -18,15 +18,6 @@ use bitfield::BitRange;
 
 pub const PROTOCOL_LEVEL_MQTT_3_1_1: u8 = 4;
 
-// VariableHeader for Connect packet
-#[derive(PartialEq, Debug)]
-pub struct Connect<'buf> {
-    name: &'buf str,
-    level: u8,
-    flags: Flags,
-    keep_alive: u16,
-}
-
 #[derive(PartialEq, Clone, Copy)]
 pub struct Flags(u8);
 
@@ -61,6 +52,15 @@ impl Debug for Flags {
         pub will_flag, _          : 2;
         pub clean_session, _      : 1;
     }
+}
+
+// VariableHeader for Connect packet
+#[derive(PartialEq, Debug)]
+pub struct Connect<'buf> {
+    name: &'buf str,
+    level: u8,
+    flags: Flags,
+    keep_alive: u16,
 }
 
 impl<'buf> Connect<'buf> {

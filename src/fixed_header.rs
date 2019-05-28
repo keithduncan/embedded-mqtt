@@ -1,12 +1,28 @@
 use crate::{
     error::Error,
-    packet::{
-        PacketType,
-        PacketFlags,
-    },
     result::Result,
     status::Status,
 };
+
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub enum PacketType {
+    Connect,
+    Connack,
+    Publish,
+    Puback,
+    Pubrec,
+    Pubrel,
+    Pubcomp,
+    Subscribe,
+    Suback,
+    Unsubscribe,
+    Unsuback,
+    Pingreq,
+    Pingresp,
+    Disconnect,
+}
+
+pub type PacketFlags = u8;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct FixedHeader {
