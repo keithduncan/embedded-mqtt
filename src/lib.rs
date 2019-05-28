@@ -15,13 +15,12 @@ extern crate bitfield;
 
 #[macro_use]
 pub mod status;
-pub mod result;
 pub mod error;
 
 mod codec;
 
+pub mod packet;
 pub mod fixed_header;
 pub mod variable_header;
-pub mod packet;
 
 pub mod qos;

@@ -1,6 +1,8 @@
+use core::result::Result;
+
 use crate::{
     status::Status,
-    result::Result,
+    error::ParseError,
 };
 
 use byteorder::{
@@ -8,7 +10,7 @@ use byteorder::{
     ByteOrder,
 };
 
-pub fn parse_u8(bytes: &[u8]) -> Result<Status<(usize, u8)>> {
+pub fn parse_u8(bytes: &[u8]) -> Result<Status<(usize, u8)>, ParseError> {
     if bytes.len() < 1 {
         return Ok(Status::Partial(1))
     }
@@ -16,7 +18,7 @@ pub fn parse_u8(bytes: &[u8]) -> Result<Status<(usize, u8)>> {
     Ok(Status::Complete((1, bytes[0])))
 }
 
-pub fn parse_u16(bytes: &[u8]) -> Result<Status<(usize, u16)>> {
+pub fn parse_u16(bytes: &[u8]) -> Result<Status<(usize, u16)>, ParseError> {
     if bytes.len() < 2 {
         return Ok(Status::Partial(2 - bytes.len()))
     }

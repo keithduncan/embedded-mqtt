@@ -1,10 +1,13 @@
-use core::cmp::min;
+use core::{
+    cmp::min,
+    result::Result,
+};
 
 use crate::{
     fixed_header::FixedHeader,
     variable_header::VariableHeader,
-    result::Result,
     status::Status,
+    error::ParseError,
 };
 
 pub type PacketId = u16;
@@ -18,7 +21,7 @@ pub struct Packet<'a> {
 }
 
 impl<'a> Packet<'a> {
-    pub fn from_bytes(bytes: &'a [u8]) -> Result<Status<(usize, Self)>> {
+    pub fn from_bytes(bytes: &'a [u8]) -> Result<Status<(usize, Self)>, ParseError> {
         let (fixed_header_offset, fixed_header) = read!(FixedHeader::from_bytes, bytes, 0);
 
         // TODO this is only duplicated while not all types have their

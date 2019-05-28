@@ -1,17 +1,17 @@
 use core::{
+    result::Result,
     str,
     cmp::min,
 };
 
 use crate::{
 	status::Status,
-	error::Error,
-	result::Result,
+	error::ParseError,
 };
 
 use super::values;
 
-pub fn parse_string(bytes: &[u8]) -> Result<Status<(usize, &str)>> {
+pub fn parse_string(bytes: &[u8]) -> Result<Status<(usize, &str)>, ParseError> {
     let offset = 0;
 
     let (offset, string_len) = read!(values::parse_u16, bytes, offset);
@@ -38,7 +38,7 @@ pub fn parse_string(bytes: &[u8]) -> Result<Status<(usize, &str)>> {
     // Requirement MQTT-1.5.3-2 requires that there be no U+0000 code points
     // in the string.
     if val.chars().any(|ch| ch == '\u{0000}') {
-        return Err(Error::Utf8)
+        return Err(ParseError::Utf8)
     }
     
     Ok(Status::Complete(((2 + string_len) as usize, val)))

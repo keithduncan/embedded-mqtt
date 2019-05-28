@@ -5,7 +5,7 @@ use core::{
 };
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
-pub enum Error {
+pub enum ParseError {
     /// Invalid packet type in header
     PacketType,
     /// Invalid packet type flag in header
@@ -26,37 +26,37 @@ pub enum Error {
     InvalidConnackReturnCode,
 }
 
-impl Error {
+impl ParseError {
     fn desc(&self) -> &'static str {
         match *self {
-            Error::PacketType => "invalid packet type in header",
-            Error::PacketFlag => "invalid packet type flag in header",
-            Error::RemainingLength => "malformed remaining length in header",
-            Error::InvalidLength => "invalid buffer length",
-            Error::Utf8 => "invalid utf-8 encoding",
-            Error::InvalidProtocolLevel => "invalid protocol level",
-            Error::InvalidConnectFlag => "invalid connect flag value",
-            Error::InvalidConnackFlag => "invalid connack flag value",
-            Error::InvalidConnackReturnCode => "invalid connack return code",
+            ParseError::PacketType => "invalid packet type in header",
+            ParseError::PacketFlag => "invalid packet type flag in header",
+            ParseError::RemainingLength => "malformed remaining length in header",
+            ParseError::InvalidLength => "invalid buffer length",
+            ParseError::Utf8 => "invalid utf-8 encoding",
+            ParseError::InvalidProtocolLevel => "invalid protocol level",
+            ParseError::InvalidConnectFlag => "invalid connect flag value",
+            ParseError::InvalidConnackFlag => "invalid connack flag value",
+            ParseError::InvalidConnackReturnCode => "invalid connack return code",
         }
     }
 }
 
-impl fmt::Display for Error {
+impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str(self.desc())
     }
 }
 
 #[cfg(feature = "std")]
-impl ::std::error::Error for Error {
+impl ::std::error::Error for ParseError {
     fn description(&self) -> &str {
         self.desc()
     }
 }
 
-impl From<Utf8Error> for Error {
+impl From<Utf8Error> for ParseError {
     fn from(_: Utf8Error) -> Self {
-        Error::Utf8
+        ParseError::Utf8
     }
 }

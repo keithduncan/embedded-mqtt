@@ -1,7 +1,9 @@
+use core::result::Result;
+
 use crate::{
     status::Status,
-    result::Result,
     fixed_header::PacketType,
+    error::ParseError,
 };
 
 pub mod connect;
@@ -19,7 +21,7 @@ pub enum VariableHeader<'a> {
 
 macro_rules! from_bytes {
 	($fn:ident, $parser:path, $name:ident) => (
-		pub fn $fn(bytes: &'a [u8]) -> Result<Status<(usize, Self)>> {
+		pub fn $fn(bytes: &'a [u8]) -> Result<Status<(usize, Self)>, ParseError> {
 			let (offset, var_header) = complete!($parser(bytes));
 			Ok(Status::Complete((offset, VariableHeader::$name(var_header))))
 		}
@@ -27,7 +29,7 @@ macro_rules! from_bytes {
 }
 
 impl<'a> VariableHeader<'a> {
-	pub fn from_bytes(r#type: PacketType, bytes: &'a [u8]) -> Option<Result<Status<(usize, Self)>>> {
+	pub fn from_bytes(r#type: PacketType, bytes: &'a [u8]) -> Option<Result<Status<(usize, Self)>, ParseError>> {
 		match r#type {
 			PacketType::Connect => Some(VariableHeader::connect(bytes)),
 			PacketType::Connack => Some(VariableHeader::connack(bytes)),

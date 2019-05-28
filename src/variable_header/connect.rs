@@ -1,14 +1,14 @@
-use crate::{
-    codec,
-    status::Status,
-    result::Result,
-    error,
-    qos,
-};
-
 use core::{
     fmt::Debug,
     convert::TryInto,
+    result::Result,
+};
+
+use crate::{
+    codec,
+    status::Status,
+    error::ParseError,
+    qos,
 };
 
 use bitfield::BitRange;
@@ -33,7 +33,7 @@ impl Flags {
         pub clean_session, _ : 1;
     }
 
-    fn will_qos(&self) -> core::result::Result<qos::QoS, qos::Error> {
+    fn will_qos(&self) -> Result<qos::QoS, qos::Error> {
         let qos_bits: u8 = self.bit_range(4, 3);
         qos_bits.try_into()
     }
@@ -61,7 +61,7 @@ pub struct Connect<'buf> {
 }
 
 impl<'buf> Connect<'buf> {
-    pub fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, Self)>> {
+    pub fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, Self)>, ParseError> {
         let offset = 0;
 
         // read protocol name
@@ -71,7 +71,7 @@ impl<'buf> Connect<'buf> {
         let (offset, level) = read!(codec::values::parse_u8, bytes, offset);
 
         if level != PROTOCOL_LEVEL_MQTT_3_1_1 {
-            return Err(error::Error::InvalidProtocolLevel)
+            return Err(ParseError::InvalidProtocolLevel)
         }
 
         // read protocol flags
@@ -81,7 +81,7 @@ impl<'buf> Connect<'buf> {
 
         if let Err(e) = flags.will_qos() {
             match e {
-                qos::Error::BadPattern => return Err(error::Error::InvalidConnectFlag),
+                qos::Error::BadPattern => return Err(ParseError::InvalidConnectFlag),
             }
         }
 

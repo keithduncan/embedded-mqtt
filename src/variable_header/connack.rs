@@ -1,13 +1,13 @@
-use crate::{
-    codec,
-    status::Status,
-    result::Result,
-    error::Error,
-};
-
 use core::{
     fmt::Debug,
     convert::{TryFrom, TryInto},
+    result::Result,
+};
+
+use crate::{
+    codec,
+    status::Status,
+    error::ParseError,
 };
 
 #[derive(PartialEq, Clone, Copy)]
@@ -33,7 +33,7 @@ impl Debug for Flags {
 
 impl TryFrom<u8> for Flags {
     type Error = ();
-    fn try_from(from: u8) -> core::result::Result<Flags, ()> {
+    fn try_from(from: u8) -> Result<Flags, ()> {
         if 0b11111110 & from != 0 {
             Err(())
         } else {
@@ -54,7 +54,7 @@ pub enum ReturnCode {
 
 impl TryFrom<u8> for ReturnCode {
     type Error = ();
-    fn try_from(from: u8) -> core::result::Result<ReturnCode, ()> {
+    fn try_from(from: u8) -> Result<ReturnCode, ()> {
         Ok(match from {
             0 => ReturnCode::Accepted,
             1 => ReturnCode::RefusedProtocolVersion,
@@ -75,7 +75,7 @@ pub struct Connack {
 }
 
 impl Connack {
-    pub fn from_bytes(bytes: &[u8]) -> Result<Status<(usize, Self)>> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Status<(usize, Self)>, ParseError> {
     	if bytes.len() < 2 {
     		return Ok(Status::Partial(2 - bytes.len()));
     	}
@@ -84,11 +84,11 @@ impl Connack {
 
         // read connack flags
         let (offset, flags) = read!(codec::values::parse_u8, bytes, offset);
-        let flags = flags.try_into().map_err(|_| Error::InvalidConnackFlag)?;
+        let flags = flags.try_into().map_err(|_| ParseError::InvalidConnackFlag)?;
 
         // read return code
         let (offset, return_code) = read!(codec::values::parse_u8, bytes, offset);
-        let return_code = return_code.try_into().map_err(|_| Error::InvalidConnackReturnCode)?;
+        let return_code = return_code.try_into().map_err(|_| ParseError::InvalidConnackReturnCode)?;
 
         #[cfg(feature = "std")]
         println!("connack::from_bytes {:?}", offset);

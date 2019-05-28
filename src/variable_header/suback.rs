@@ -1,7 +1,9 @@
+use core::result::Result;
+
 use crate::{
     codec,
     status::Status,
-    result::Result,
+    error::ParseError,
 };
 
 // VariableHeader for Connack packet
@@ -11,7 +13,7 @@ pub struct Suback {
 }
 
 impl Suback {
-    pub fn from_bytes(bytes: &[u8]) -> Result<Status<(usize, Self)>> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Status<(usize, Self)>, ParseError> {
     	if bytes.len() < 2 {
     		return Ok(Status::Partial(2 - bytes.len()));
     	}

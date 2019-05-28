@@ -1,6 +1,7 @@
+use core::result::Result;
+
 use crate::{
-    error::Error,
-    result::Result,
+    error::ParseError,
     status::Status,
 };
 
@@ -32,7 +33,7 @@ pub struct FixedHeader {
 }
 
 impl FixedHeader {
-    pub fn from_bytes(bytes: &[u8]) -> Result<Status<(usize, Self)>> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Status<(usize, Self)>, ParseError> {
         // "bytes" must be at least 2 bytes long to be a valid fixed header
         if bytes.len() < 2 {
             return Ok(Status::Partial(2 - bytes.len()));
@@ -60,14 +61,14 @@ impl FixedHeader {
     }
 }
 
-fn parse_remaining_length(bytes: &[u8]) -> Result<Status<(usize, u32)>> {
+fn parse_remaining_length(bytes: &[u8]) -> Result<Status<(usize, u32)>, ParseError> {
     let mut multiplier = 1;
     let mut value = 0u32;
     let mut index = 0;
 
     loop {
         if multiplier > 128 * 128 * 128 {
-            return Err(Error::RemainingLength);
+            return Err(ParseError::RemainingLength);
         }
 
         if index >= bytes.len() {
@@ -105,7 +106,7 @@ fn encode_remaining_length(mut len: u32, buf: &mut [u8; 4]) -> usize {
     }
 }
 
-fn parse_packet_type(inp: u8) -> Result<(PacketType, PacketFlags)> {
+fn parse_packet_type(inp: u8) -> Result<(PacketType, PacketFlags), ParseError> {
     // high 4 bits are the packet type
     let packet_type = match (inp & 0xF0) >> 4 {
         1 => Ok(PacketType::Connect),
@@ -122,7 +123,7 @@ fn parse_packet_type(inp: u8) -> Result<(PacketType, PacketFlags)> {
         12 => Ok(PacketType::Pingreq),
         13 => Ok(PacketType::Pingresp),
         14 => Ok(PacketType::Disconnect),
-        _ => Err(Error::PacketType),
+        _ => Err(ParseError::PacketType),
     }?;
 
     // low 4 bits represent control flags
@@ -131,10 +132,7 @@ fn parse_packet_type(inp: u8) -> Result<(PacketType, PacketFlags)> {
     validate_flag(packet_type, flags)
 }
 
-fn validate_flag(
-    packet_type: PacketType,
-    flags: PacketFlags,
-) -> Result<(PacketType, PacketFlags)> {
+fn validate_flag(packet_type: PacketType, flags: PacketFlags) -> Result<(PacketType, PacketFlags), ParseError> {
     // for the following packet types, the control flag MUST be zero
     const ZERO_TYPES: &[PacketType] = &[
         PacketType::Connect,
@@ -164,10 +162,10 @@ fn validate_flag_val(
     flags: PacketFlags,
     types: &[PacketType],
     expected_flags: PacketFlags,
-) -> Result<(PacketType, PacketFlags)> {
+) -> Result<(PacketType, PacketFlags), ParseError> {
     if let Some(_) = types.iter().find(|&&v| v == packet_type) {
         if flags != expected_flags {
-            return Err(Error::PacketFlag);
+            return Err(ParseError::PacketFlag);
         }
     }
 
@@ -210,7 +208,7 @@ mod tests {
     #[test]
     fn bad_packet_type() {
         let result = parse_packet_type(15 << 4);
-        assert_eq!(result, Err(Error::PacketType));
+        assert_eq!(result, Err(ParseError::PacketType));
     }
 
     #[test]
@@ -229,7 +227,7 @@ mod tests {
         ];
         for (buf, _) in inputs.iter_mut() {
             let result = parse_packet_type(buf[0]);
-            assert_eq!(result, Err(Error::PacketFlag));
+            assert_eq!(result, Err(ParseError::PacketFlag));
         }
     }
 
@@ -242,7 +240,7 @@ mod tests {
         ];
         for (buf, _) in inputs.iter_mut() {
             let result = parse_packet_type(buf[0]);
-            assert_eq!(result, Err(Error::PacketFlag));
+            assert_eq!(result, Err(ParseError::PacketFlag));
         }
     }
 
@@ -278,7 +276,7 @@ mod tests {
     fn bad_remaining_length() {
         let buf = [0xFF, 0xFF, 0xFF, 0xFF];
         let result = parse_remaining_length(&buf);
-        assert_eq!(result, Err(Error::RemainingLength));
+        assert_eq!(result, Err(ParseError::RemainingLength));
     }
 
     #[test]
