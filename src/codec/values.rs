@@ -22,7 +22,6 @@ pub fn parse_u8(bytes: &[u8]) -> Result<Status<(usize, u8)>, DecodeError> {
     Ok(Status::Complete((1, bytes[0])))
 }
 
-#[allow(dead_code)]
 pub fn encode_u8(value: u8, bytes: &mut [u8]) -> Result<usize, EncodeError> {
     if bytes.len() < 1 {
         return Err(EncodeError::OutOfSpace)
