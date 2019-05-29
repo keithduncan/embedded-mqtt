@@ -10,7 +10,23 @@ use crate::{
 	error::{DecodeError, EncodeError},
 };
 
-use super::values;
+use super::{
+    values,
+    Decodable,
+    Encodable,
+};
+
+impl<'buf> Decodable<'buf> for &'buf str {
+    fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, &'buf str)>, DecodeError> {
+        parse_string(bytes)
+    }
+}
+
+impl Encodable for str {
+    fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+        encode_string(self, bytes)
+    }
+}
 
 pub fn parse_string(bytes: &[u8]) -> Result<Status<(usize, &str)>, DecodeError> {
     let offset = 0;
