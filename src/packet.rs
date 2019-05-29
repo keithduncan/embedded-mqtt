@@ -56,7 +56,7 @@ impl<'a> Packet<'a> {
         let len = u32::try_from(variable_header.encoded_len() + payload.encoded_len())?;
         Ok(Self {
             fixed_header: FixedHeader::new(
-                fixed_header::PacketType::Subscribe,
+                fixed_header::PacketType::Publish,
                 flags.into(),
                 len,
             ),
