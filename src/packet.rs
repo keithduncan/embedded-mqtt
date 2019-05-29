@@ -73,18 +73,12 @@ impl<'a> Encodable for Packet<'a> {
             offset + o
         };
 
-        #[cfg(feature = "std")]
-        println!("fixed_header offset {:?}", offset);
-
         if let Some(ref variable_header) = self.variable_header {
             offset = {
                 let o = variable_header.to_bytes(&mut bytes[offset..])?;
                 offset + o
             };
         }
-
-        #[cfg(feature = "std")]
-        println!("variable_header offset {:?}", offset);
 
         let offset = {
             let payload_size = self.payload.len();
@@ -96,9 +90,6 @@ impl<'a> Encodable for Packet<'a> {
 
             (offset + payload_size)
         };
-
-        #[cfg(feature = "std")]
-        println!("payload offset {:?}", offset);
 
         Ok(offset)
     }
