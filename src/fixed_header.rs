@@ -142,7 +142,9 @@ impl<'buf> Decodable<'buf> for FixedHeader {
 
 impl Encodable for FixedHeader {
     fn encoded_len(&self) -> usize {
-        unimplemented!()
+        let mut buf = [0u8; 4];
+        let u = encode_remaining_length(self.len, &mut buf);
+        1 + u
     }
 
     fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {

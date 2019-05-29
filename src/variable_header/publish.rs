@@ -82,6 +82,8 @@ mod tests {
 			packet_identifier: Some(1),
 		};
 
+		assert_eq!(7, header.encoded_len());
+
 		let mut buf = [0u8; 7];
 		let res = header.to_bytes(&mut buf[..]);
 		assert_eq!(res, Ok(7));

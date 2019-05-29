@@ -53,7 +53,7 @@ impl<'a> Packet<'a> {
         // TODO encode this using type states
         assert!(flags.qos().expect("valid qos") == qos::QoS::AtMostOnce || variable_header.packet_identifier().is_some());
 
-        let len = u32::try_from(variable_header.encoded_len() + payload.encoded_len())?;
+        let len = u32::try_from(variable_header.encoded_len() + payload.len())?;
         Ok(Self {
             fixed_header: FixedHeader::new(
                 fixed_header::PacketType::Publish,
@@ -125,7 +125,7 @@ impl<'a> Decodable<'a> for Packet<'a> {
 
 impl<'a> Encodable for Packet<'a> {
     fn encoded_len(&self) -> usize {
-        unimplemented!()
+        self.fixed_header.encoded_len() + self.fixed_header.len() as usize
     }
 
     fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
@@ -151,5 +151,36 @@ impl<'a> Encodable for Packet<'a> {
         };
 
         Ok(offset)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn encode_publish() {
+        let payload = b"{}";
+        assert_eq!(2, payload.len());
+
+        let mut publish_flags = fixed_header::PublishFlags::default();
+        publish_flags.set_qos(qos::QoS::AtLeastOnce);
+        let publish_id = 2;
+        let publish = Packet::publish(
+            publish_flags,
+            variable_header::publish::Publish::new(
+                "a/b",
+                Some(publish_id),
+            ),
+            payload
+        ).expect("valid packet");
+
+        println!("{:#?}", publish);
+
+        assert_eq!(11, publish.encoded_len());
+        assert_eq!(2, publish.fixed_header().encoded_len());
+        assert_eq!(9, publish.fixed_header().len());
+        assert_eq!(7, publish.variable_header().as_ref().expect("variable header").encoded_len());
+        assert_eq!(2, publish.payload().as_ref().expect("payload").encoded_len());
     }
 }
