@@ -3,7 +3,7 @@ use core::result::Result;
 use crate::{
     codec::{self, Decodable},
     status::Status,
-    error::ParseError,
+    error::DecodeError,
 };
 
 // VariableHeader for Connack packet
@@ -19,7 +19,7 @@ impl Suback {
 }
 
 impl<'buf> Decodable<'buf> for Suback {
-    fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, Self)>, ParseError> {
+    fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
         if bytes.len() < 2 {
             return Ok(Status::Partial(2 - bytes.len()));
         }

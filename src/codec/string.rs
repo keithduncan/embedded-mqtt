@@ -7,12 +7,12 @@ use core::{
 
 use crate::{
 	status::Status,
-	error::{ParseError, EncodeError},
+	error::{DecodeError, EncodeError},
 };
 
 use super::values;
 
-pub fn parse_string(bytes: &[u8]) -> Result<Status<(usize, &str)>, ParseError> {
+pub fn parse_string(bytes: &[u8]) -> Result<Status<(usize, &str)>, DecodeError> {
     let offset = 0;
 
     let (offset, string_len) = read!(values::parse_u16, bytes, offset);
@@ -39,7 +39,7 @@ pub fn parse_string(bytes: &[u8]) -> Result<Status<(usize, &str)>, ParseError> {
     // Requirement MQTT-1.5.3-2 requires that there be no U+0000 code points
     // in the string.
     if val.chars().any(|ch| ch == '\u{0000}') {
-        return Err(ParseError::Utf8)
+        return Err(DecodeError::Utf8)
     }
     
     Ok(Status::Complete(((2 + string_len) as usize, val)))
@@ -112,7 +112,7 @@ mod tests {
         let mut buf = Cursor::new(Vec::new());
         buf.write_u16::<BigEndian>(inp.len() as u16).unwrap();
         buf.write(&inp).unwrap();
-        assert_eq!(Err(ParseError::Utf8), parse_string(buf.get_ref().as_ref()));
+        assert_eq!(Err(DecodeError::Utf8), parse_string(buf.get_ref().as_ref()));
     }
 
     #[test]
@@ -121,6 +121,6 @@ mod tests {
         let mut buf = Cursor::new(Vec::new());
         buf.write_u16::<BigEndian>(inp.len() as u16).unwrap();
         buf.write(inp.as_bytes()).unwrap();
-        assert_eq!(Err(ParseError::Utf8), parse_string(buf.get_ref().as_ref()));
+        assert_eq!(Err(DecodeError::Utf8), parse_string(buf.get_ref().as_ref()));
     }
 }

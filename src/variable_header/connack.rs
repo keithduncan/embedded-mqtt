@@ -7,7 +7,7 @@ use core::{
 use crate::{
     codec::{self, Decodable},
     status::Status,
-    error::ParseError,
+    error::DecodeError,
 };
 
 #[derive(PartialEq, Clone, Copy)]
@@ -85,7 +85,7 @@ impl Connack {
 }
 
 impl<'buf> Decodable<'buf> for Connack {
-    fn from_bytes(bytes: &[u8]) -> Result<Status<(usize, Self)>, ParseError> {
+    fn from_bytes(bytes: &[u8]) -> Result<Status<(usize, Self)>, DecodeError> {
         if bytes.len() < 2 {
             return Ok(Status::Partial(2 - bytes.len()));
         }
@@ -94,11 +94,11 @@ impl<'buf> Decodable<'buf> for Connack {
 
         // read connack flags
         let (offset, flags) = read!(codec::values::parse_u8, bytes, offset);
-        let flags = flags.try_into().map_err(|_| ParseError::InvalidConnackFlag)?;
+        let flags = flags.try_into().map_err(|_| DecodeError::InvalidConnackFlag)?;
 
         // read return code
         let (offset, return_code) = read!(codec::values::parse_u8, bytes, offset);
-        let return_code = return_code.try_into().map_err(|_| ParseError::InvalidConnackReturnCode)?;
+        let return_code = return_code.try_into().map_err(|_| DecodeError::InvalidConnackReturnCode)?;
 
         Ok(Status::Complete((offset, Connack {
             flags,

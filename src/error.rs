@@ -5,7 +5,7 @@ use core::{
 };
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
-pub enum ParseError {
+pub enum DecodeError {
     /// Invalid packet type in header
     PacketType,
     /// Invalid packet type flag in header
@@ -26,38 +26,38 @@ pub enum ParseError {
     InvalidConnackReturnCode,
 }
 
-impl ParseError {
+impl DecodeError {
     fn desc(&self) -> &'static str {
         match *self {
-            ParseError::PacketType => "invalid packet type in header",
-            ParseError::PacketFlag => "invalid packet type flag in header",
-            ParseError::RemainingLength => "malformed remaining length in header",
-            ParseError::InvalidLength => "invalid buffer length",
-            ParseError::Utf8 => "invalid utf-8 encoding",
-            ParseError::InvalidProtocolLevel => "invalid protocol level",
-            ParseError::InvalidConnectFlag => "invalid connect flag value",
-            ParseError::InvalidConnackFlag => "invalid connack flag value",
-            ParseError::InvalidConnackReturnCode => "invalid connack return code",
+            DecodeError::PacketType => "invalid packet type in header",
+            DecodeError::PacketFlag => "invalid packet type flag in header",
+            DecodeError::RemainingLength => "malformed remaining length in header",
+            DecodeError::InvalidLength => "invalid buffer length",
+            DecodeError::Utf8 => "invalid utf-8 encoding",
+            DecodeError::InvalidProtocolLevel => "invalid protocol level",
+            DecodeError::InvalidConnectFlag => "invalid connect flag value",
+            DecodeError::InvalidConnackFlag => "invalid connack flag value",
+            DecodeError::InvalidConnackReturnCode => "invalid connack return code",
         }
     }
 }
 
-impl fmt::Display for ParseError {
+impl fmt::Display for DecodeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str(self.desc())
     }
 }
 
 #[cfg(feature = "std")]
-impl ::std::error::Error for ParseError {
+impl ::std::error::Error for DecodeError {
     fn description(&self) -> &str {
         self.desc()
     }
 }
 
-impl From<Utf8Error> for ParseError {
+impl From<Utf8Error> for DecodeError {
     fn from(_: Utf8Error) -> Self {
-        ParseError::Utf8
+        DecodeError::Utf8
     }
 }
 

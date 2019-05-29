@@ -7,7 +7,7 @@ use crate::{
     fixed_header::FixedHeader,
     variable_header::VariableHeader,
     status::Status,
-    error::{ParseError, EncodeError},
+    error::{DecodeError, EncodeError},
     codec::{Decodable, Encodable},
 };
 
@@ -20,7 +20,7 @@ pub struct Packet<'a> {
 }
 
 impl<'a> Decodable<'a> for Packet<'a> {
-    fn from_bytes(bytes: &'a [u8]) -> Result<Status<(usize, Self)>, ParseError> {
+    fn from_bytes(bytes: &'a [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
         let (fixed_header_offset, fixed_header) = read!(FixedHeader::from_bytes, bytes, 0);
 
         // TODO this is only duplicated while not all types have their

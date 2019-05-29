@@ -7,7 +7,7 @@ use core::{
 use crate::{
     codec::{self, Decodable, Encodable},
     status::Status,
-    error::{ParseError, EncodeError},
+    error::{DecodeError, EncodeError},
     qos,
 };
 
@@ -121,7 +121,7 @@ impl<'buf> Connect<'buf> {
 }
 
 impl<'buf> Decodable<'buf> for Connect<'buf> {
-    fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, Connect<'buf>)>, ParseError> {
+    fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, Connect<'buf>)>, DecodeError> {
         let offset = 0;
 
         // read protocol name
@@ -130,9 +130,9 @@ impl<'buf> Decodable<'buf> for Connect<'buf> {
         // read protocol revision
         let (offset, level) = read!(codec::values::parse_u8, bytes, offset);
 
-        let level = level.try_into().map_err(|_| ParseError::InvalidProtocolLevel)?;
+        let level = level.try_into().map_err(|_| DecodeError::InvalidProtocolLevel)?;
         if level != Level::Level3_1_1 {
-            return Err(ParseError::InvalidProtocolLevel)
+            return Err(DecodeError::InvalidProtocolLevel)
         }
 
         // read protocol flags
@@ -142,7 +142,7 @@ impl<'buf> Decodable<'buf> for Connect<'buf> {
 
         if let Err(e) = flags.will_qos() {
             match e {
-                qos::Error::BadPattern => return Err(ParseError::InvalidConnectFlag),
+                qos::Error::BadPattern => return Err(DecodeError::InvalidConnectFlag),
             }
         }
 
