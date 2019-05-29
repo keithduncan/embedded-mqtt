@@ -90,3 +90,9 @@ impl ::std::error::Error for EncodeError {
         self.desc()
     }
 }
+
+impl From<core::num::TryFromIntError> for EncodeError {
+    fn from(_err: core::num::TryFromIntError) -> EncodeError {
+        EncodeError::ValueTooBig
+    }
+}

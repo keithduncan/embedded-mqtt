@@ -1,22 +1,39 @@
 use core::{
+    convert::TryFrom,
     cmp::min,
     result::Result,
 };
 
 use crate::{
-    fixed_header::FixedHeader,
-    variable_header::VariableHeader,
+    fixed_header::{self, FixedHeader},
+    variable_header::{self, VariableHeader},
+    payload::{self, Payload},
     status::Status,
     error::{DecodeError, EncodeError},
-    codec::{self, Decodable, Encodable},
+    codec::{Decodable, Encodable},
 };
 
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct Packet<'a> {
-    pub fixed_header: FixedHeader,
-    pub variable_header: Option<VariableHeader<'a>>,
-    pub payload: &'a [u8],
+    fixed_header: FixedHeader,
+    variable_header: Option<VariableHeader<'a>>,
+    payload: Option<Payload<'a>>,
+}
+
+impl<'a> Packet<'a> {
+    pub fn connect(variable_header: variable_header::connect::Connect<'a>, payload: payload::connect::Connect<'a>) -> Result<Packet<'a>, EncodeError> {
+        let len = u32::try_from(variable_header.encoded_len() + payload.encoded_len())?;
+        Ok(Packet {
+            fixed_header: FixedHeader::new(
+                fixed_header::PacketType::Connect,
+                0,
+                len,
+            ),
+            variable_header: Some(variable_header::VariableHeader::Connect(variable_header)),
+            payload: Some(payload::Payload::Connect(payload)),
+        })
+    }
 }
 
 impl<'a> Decodable<'a> for Packet<'a> {
@@ -54,6 +71,8 @@ impl<'a> Decodable<'a> for Packet<'a> {
             (None, payload)
         };
 
+        let payload = Some(payload::Payload::Bytes(payload));
+
         Ok(Status::Complete((fixed_header_offset + fixed_header.len() as usize, Packet {
             fixed_header,
             variable_header,
@@ -82,9 +101,11 @@ impl<'a> Encodable for Packet<'a> {
             };
         }
 
-        let offset = {
-            let o = codec::values::encode_bytes(self.payload, &mut bytes[offset..])?;
+        let offset = if let Some(ref payload) = self.payload {
+            let o = payload.to_bytes(&mut bytes[offset..])?;
             offset + o
+        } else {
+            offset
         };
 
         Ok(offset)

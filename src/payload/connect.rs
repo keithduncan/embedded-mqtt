@@ -9,6 +9,7 @@ use crate::{
     variable_header::connect::Flags,
 };
 
+#[derive(Debug)]
 pub struct Will<'buf> {
     topic: &'buf str,
     message: &'buf [u8],
@@ -49,6 +50,7 @@ impl<'buf> Will<'buf> {
     }
 }
 
+#[derive(Debug)]
 pub struct Connect<'buf> {
     client_id: &'buf str,
     will: Option<Will<'buf>>,
