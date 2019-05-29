@@ -1,7 +1,7 @@
 use core::result::Result;
 
 use crate::{
-    codec,
+    codec::{self, Decodable, Encodable},
     error::{DecodeError, EncodeError},
     status::Status,
 };
@@ -28,40 +28,18 @@ pub type PacketFlags = u8;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct FixedHeader {
-    pub r#type: PacketType,
-    pub flags: PacketFlags,
-    pub len: u32,
+    r#type: PacketType,
+    flags: PacketFlags,
+    len: u32,
 }
 
 impl FixedHeader {
-    pub fn from_bytes(bytes: &[u8]) -> Result<Status<(usize, Self)>, DecodeError> {
-        // "bytes" must be at least 2 bytes long to be a valid fixed header
-        if bytes.len() < 2 {
-            return Ok(Status::Partial(2 - bytes.len()));
+    pub fn new(r#type: PacketType, flags: PacketFlags, len: u32) -> Self {
+        FixedHeader {
+            r#type,
+            flags,
+            len
         }
-
-        let (r#type, flags) = parse_packet_type(bytes[0])?;
-
-        let offset = 1;
-
-        let (offset, len) = read!(parse_remaining_length, bytes, offset);
-
-        Ok(Status::Complete((offset, Self { r#type, flags, len })))
-    }
-
-    pub fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
-        let offset = 0;
-        let offset = {
-            let o = codec::values::encode_u8(encode_packet_type(self.r#type, self.flags), &mut bytes[offset..])?;
-            offset + o
-        };
-        let offset = {
-            let mut remaining_length = [0u8; 4];
-            let o = encode_remaining_length(self.len, &mut remaining_length);
-            (&mut bytes[offset..offset+o]).copy_from_slice(&remaining_length[..o]);
-            offset + o
-        };
-        Ok(offset)
     }
 
     pub fn r#type(&self) -> PacketType {
@@ -74,6 +52,44 @@ impl FixedHeader {
 
     pub fn len(&self) -> u32 {
         self.len
+    }
+}
+
+impl<'buf> Decodable<'buf> for FixedHeader {
+    fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
+        // "bytes" must be at least 2 bytes long to be a valid fixed header
+        if bytes.len() < 2 {
+            return Ok(Status::Partial(2 - bytes.len()));
+        }
+
+        let (r#type, flags) = parse_packet_type(bytes[0])?;
+
+        let offset = 1;
+
+        let (offset, len) = read!(parse_remaining_length, bytes, offset);
+
+        Ok(Status::Complete((offset, Self {
+            r#type,
+            flags,
+            len
+        })))
+    }
+}
+
+impl Encodable for FixedHeader {
+    fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+        let offset = 0;
+        let offset = {
+            let o = codec::values::encode_u8(encode_packet_type(self.r#type, self.flags), &mut bytes[offset..])?;
+            offset + o
+        };
+        let offset = {
+            let mut remaining_length = [0u8; 4];
+            let o = encode_remaining_length(self.len, &mut remaining_length);
+            (&mut bytes[offset..offset+o]).copy_from_slice(&remaining_length[..o]);
+            offset + o
+        };
+        Ok(offset)
     }
 }
 
