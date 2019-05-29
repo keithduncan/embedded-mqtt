@@ -18,6 +18,8 @@ pub enum VariableHeader<'a> {
 	Suback(suback::Suback),
 }
 
+pub type PacketId = u16;
+
 macro_rules! from_bytes {
 	($fn:ident, $parser:path, $name:ident) => (
 		pub fn $fn(bytes: &'a [u8]) -> Result<Status<(usize, Self)>, ParseError> {

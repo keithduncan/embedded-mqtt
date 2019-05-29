@@ -11,8 +11,6 @@ use crate::{
     codec::{Decodable, Encodable},
 };
 
-pub type PacketId = u16;
-
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct Packet<'a> {
