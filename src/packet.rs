@@ -63,6 +63,10 @@ impl<'a> Decodable<'a> for Packet<'a> {
 }
 
 impl<'a> Encodable for Packet<'a> {
+    fn encoded_len(&self) -> usize {
+        unimplemented!()
+    }
+
     fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
         let mut offset = 0;
 

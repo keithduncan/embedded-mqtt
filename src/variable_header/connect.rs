@@ -173,6 +173,10 @@ impl<'buf> Decodable<'buf> for Connect<'buf> {
 }
 
 impl<'buf> Encodable for Connect<'buf> {
+    fn encoded_len(&self) -> usize {
+        self.name.encoded_len() + 1 + 1 + 2
+    }
+
     fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
         let offset = 0;
         let offset = {

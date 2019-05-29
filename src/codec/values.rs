@@ -57,6 +57,10 @@ impl<'buf> Decodable<'buf> for &'buf [u8] {
 }
 
 impl Encodable for [u8] {
+    fn encoded_len(&self) -> usize {
+        2 + self.len()
+    }
+
     fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
         encode_bytes(self, bytes)
     }

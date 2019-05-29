@@ -28,6 +28,10 @@ impl<'buf> Decodable<'buf> for Will<'buf> {
 }
 
 impl<'buf> Encodable for Will<'buf> {
+    fn encoded_len(&self) -> usize {
+        2 + self.topic.len() + 2 + self.message.len()
+    }
+
     fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
         let offset = 0;
         let offset = codec::string::encode_string(self.topic, &mut bytes[offset..])?;
@@ -100,6 +104,13 @@ impl<'buf> Connect<'buf> {
 }
 
 impl<'buf> Encodable for Connect<'buf> {
+    fn encoded_len(&self) -> usize {
+        self.client_id.encoded_len() +
+            self.will.as_ref().map(|w| w.encoded_len()).unwrap_or(0) +
+            self.username.as_ref().map(|u| u.encoded_len()).unwrap_or(0) +
+            self.password.as_ref().map(|p| p.encoded_len()).unwrap_or(0)
+    }
+
     fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
         let offset = 0;
 

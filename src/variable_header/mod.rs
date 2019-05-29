@@ -45,6 +45,13 @@ impl<'a> VariableHeader<'a> {
 }
 
 impl<'buf> Encodable for VariableHeader<'buf> {
+	fn encoded_len(&self) -> usize {
+        match self {
+        	&VariableHeader::Connect(ref c) => c.encoded_len(),
+        	_ => unimplemented!()
+        }
+    }
+
 	fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
 		match self {
 			&VariableHeader::Connect(ref conn) => conn.to_bytes(bytes),
