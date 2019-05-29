@@ -8,7 +8,7 @@ use crate::{
     variable_header::VariableHeader,
     status::Status,
     error::{DecodeError, EncodeError},
-    codec::{Decodable, Encodable},
+    codec::{self, Decodable, Encodable},
 };
 
 #[derive(Debug)]
@@ -79,14 +79,8 @@ impl<'a> Encodable for Packet<'a> {
         }
 
         let offset = {
-            let payload_size = self.payload.len();
-            if offset + payload_size > bytes.len() {
-                return Err(EncodeError::OutOfSpace)
-            }
-
-            (&mut bytes[offset..offset + payload_size as usize]).copy_from_slice(self.payload);
-
-            (offset + payload_size)
+            let o = codec::values::encode_bytes(self.payload, &mut bytes[offset..])?;
+            offset + o
         };
 
         Ok(offset)
