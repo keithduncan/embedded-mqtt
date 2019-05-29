@@ -14,6 +14,19 @@ use crate::{
 use bitfield::BitRange;
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
+pub enum Protocol {
+    MQTT,
+}
+
+impl Protocol {
+    fn name(self) -> &'static str {
+        match self {
+            Protocol::MQTT => "MQTT",
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum Level {
     Level3_1_1,
 }
@@ -94,9 +107,10 @@ pub struct Connect<'buf> {
 }
 
 impl<'buf> Connect<'buf> {
-    pub fn new(name: &'buf str, level: Level, flags: Flags, keep_alive: u16) -> Self {
+    pub fn new(protocol: Protocol, level: Level, flags: Flags, keep_alive: u16) -> Self {
+        let name = protocol.name();
         Connect {
-            name,
+            name: name,
             level,
             flags,
             keep_alive
