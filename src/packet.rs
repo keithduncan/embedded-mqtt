@@ -65,6 +65,30 @@ impl<'a> Packet<'a> {
         })
     }
 
+    pub fn pingreq() -> Self {
+        Self {
+            fixed_header: FixedHeader::new(
+                fixed_header::PacketType::Pingreq,
+                fixed_header::PacketFlags::pingreq(),
+                0,
+            ),
+            variable_header: None,
+            payload: None,
+        }
+    }
+
+    pub fn pingresp() -> Self {
+        Self {
+            fixed_header: FixedHeader::new(
+                fixed_header::PacketType::Pingresp,
+                fixed_header::PacketFlags::pingresp(),
+                0,
+            ),
+            variable_header: None,
+            payload: None,
+        }
+    }
+
     pub fn fixed_header(&self) -> &FixedHeader {
         &self.fixed_header
     }

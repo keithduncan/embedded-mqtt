@@ -35,12 +35,24 @@ pub enum PacketType {
 pub struct PacketFlags(u8);
 
 impl PacketFlags {
+    #[inline]
     pub fn connect() -> Self {
         Self(0b0000)
     }
 
+    #[inline]
     pub fn subscribe() -> Self {
         Self(0b0010)
+    }
+
+    #[inline]
+    pub fn pingreq() -> Self {
+        Self(0b0000)
+    }
+
+    #[inline]
+    pub fn pingresp() -> Self {
+        Self(0b0000)
     }
 }
 
