@@ -2,7 +2,7 @@ use core::result::Result;
 
 use crate::{
     status::Status,
-    fixed_header::PacketType,
+    fixed_header::{PacketType, PacketFlags},
     error::{DecodeError, EncodeError},
     codec::{Decodable, Encodable},
 };
@@ -38,12 +38,21 @@ impl<'a> VariableHeader<'a> {
     from_bytes!(subscribe, packet_identifier::PacketIdentifier::from_bytes, Subscribe);
     from_bytes!(suback,    packet_identifier::PacketIdentifier::from_bytes, Suback);
 
-    pub fn from_bytes(r#type: PacketType, bytes: &'a [u8]) -> Option<Result<Status<(usize, Self)>, DecodeError>> {
+    pub fn from_bytes(r#type: PacketType, flags: PacketFlags, bytes: &'a [u8]) -> Option<Result<Status<(usize, Self)>, DecodeError>> {
         match r#type {
             PacketType::Connect   => Some(VariableHeader::connect(bytes)),
             PacketType::Connack   => Some(VariableHeader::connack(bytes)),
             PacketType::Subscribe => Some(VariableHeader::subscribe(bytes)),
             PacketType::Suback    => Some(VariableHeader::suback(bytes)),
+            PacketType::Publish   => {
+                let (offset, var_header) = match publish::Publish::from_bytes(flags.into(), bytes) {
+                    Ok(Status::Partial(n)) => return Some(Ok(Status::Partial(n))),
+                    Err(e) => return Some(Err(e)),
+
+                    Ok(Status::Complete(x)) => x,
+                };
+                Some(Ok(Status::Complete((offset, VariableHeader::Publish(var_header)))))
+            }
             _ => None,
         }
     }

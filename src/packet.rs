@@ -84,7 +84,7 @@ impl<'a> Decodable<'a> for Packet<'a> {
 
         // TODO this is only duplicated while not all types have their
         // variable header parsed.
-        let (variable_header, payload) = if let Some(result) = VariableHeader::from_bytes(fixed_header.r#type(), &bytes[fixed_header_offset..]) {
+        let (variable_header, payload) = if let Some(result) = VariableHeader::from_bytes(fixed_header.r#type(), fixed_header.flags(), &bytes[fixed_header_offset..]) {
             let (variable_header_offset, variable_header) = match result {
                 Err(e) => return Err(e),
                 Ok(Status::Partial(p)) => return Ok(Status::Partial(p)),
