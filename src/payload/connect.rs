@@ -53,6 +53,17 @@ pub struct Connect<'buf> {
 }
 
 impl<'buf> Connect<'buf> {
+    pub fn new(client_id: &'buf str, will: Option<Will<'buf>>, username: Option<&'buf str>, password: Option<&'buf [u8]>) -> Self {
+        Connect {
+            client_id,
+            will,
+            username,
+            password,
+        }
+    }
+}
+
+impl<'buf> Connect<'buf> {
     pub fn from_bytes(flags: Flags, bytes: &'buf [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
         let offset = 0;
 
