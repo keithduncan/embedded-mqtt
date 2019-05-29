@@ -27,7 +27,7 @@ impl<'a> Packet<'a> {
         Ok(Packet {
             fixed_header: FixedHeader::new(
                 fixed_header::PacketType::Connect,
-                0,
+                0b0000,
                 len,
             ),
             variable_header: Some(variable_header::VariableHeader::Connect(variable_header)),
