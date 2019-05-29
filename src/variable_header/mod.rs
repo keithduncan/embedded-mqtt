@@ -4,6 +4,7 @@ use crate::{
     status::Status,
     fixed_header::PacketType,
     error::{ParseError, EncodeError},
+    codec::{Decodable, Encodable},
 };
 
 pub mod connect;
@@ -27,6 +28,10 @@ macro_rules! from_bytes {
 }
 
 impl<'a> VariableHeader<'a> {
+	from_bytes!(connect, connect::Connect::from_bytes, Connect);
+	from_bytes!(connack, connack::Connack::from_bytes, Connack);
+	from_bytes!(suback,  suback::Suback::from_bytes,   Suback);
+
 	pub fn from_bytes(r#type: PacketType, bytes: &'a [u8]) -> Option<Result<Status<(usize, Self)>, ParseError>> {
 		match r#type {
 			PacketType::Connect => Some(VariableHeader::connect(bytes)),
@@ -35,12 +40,10 @@ impl<'a> VariableHeader<'a> {
 			_ => None,
 		}
 	}
+}
 
-	from_bytes!(connect, connect::Connect::from_bytes, Connect);
-	from_bytes!(connack, connack::Connack::from_bytes, Connack);
-	from_bytes!(suback,  suback::Suback::from_bytes,   Suback);
-
-	pub fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+impl<'buf> Encodable for VariableHeader<'buf> {
+	fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
 		match self {
 			&VariableHeader::Connect(ref conn) => conn.to_bytes(bytes),
 			_ => unimplemented!(),

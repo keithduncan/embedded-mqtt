@@ -1,7 +1,7 @@
 use core::result::Result;
 
 use crate::{
-    codec,
+    codec::{self, Decodable},
     status::Status,
     error::ParseError,
 };
@@ -13,10 +13,16 @@ pub struct Suback {
 }
 
 impl Suback {
-    pub fn from_bytes(bytes: &[u8]) -> Result<Status<(usize, Self)>, ParseError> {
-    	if bytes.len() < 2 {
-    		return Ok(Status::Partial(2 - bytes.len()));
-    	}
+    pub fn packet_identifier(&self) -> u16 {
+        self.packet_identifier
+    }
+}
+
+impl<'buf> Decodable<'buf> for Suback {
+    fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, Self)>, ParseError> {
+        if bytes.len() < 2 {
+            return Ok(Status::Partial(2 - bytes.len()));
+        }
 
         let offset = 0;
 
@@ -26,10 +32,6 @@ impl Suback {
         Ok(Status::Complete((offset, Suback {
             packet_identifier,
         })))
-    }
-
-    pub fn packet_identifier(&self) -> u16 {
-        self.packet_identifier
     }
 }
 

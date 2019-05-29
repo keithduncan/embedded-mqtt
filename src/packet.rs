@@ -8,6 +8,7 @@ use crate::{
     variable_header::VariableHeader,
     status::Status,
     error::{ParseError, EncodeError},
+    codec::{Decodable, Encodable},
 };
 
 pub type PacketId = u16;
@@ -20,8 +21,8 @@ pub struct Packet<'a> {
     pub payload: &'a [u8],
 }
 
-impl<'a> Packet<'a> {
-    pub fn from_bytes(bytes: &'a [u8]) -> Result<Status<(usize, Self)>, ParseError> {
+impl<'a> Decodable<'a> for Packet<'a> {
+    fn from_bytes(bytes: &'a [u8]) -> Result<Status<(usize, Self)>, ParseError> {
         let (fixed_header_offset, fixed_header) = read!(FixedHeader::from_bytes, bytes, 0);
 
         // TODO this is only duplicated while not all types have their
@@ -61,8 +62,10 @@ impl<'a> Packet<'a> {
             payload,
         })))
     }
+}
 
-    pub fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+impl<'a> Encodable for Packet<'a> {
+    fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
         let mut offset = 0;
 
         offset = {

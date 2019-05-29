@@ -5,7 +5,7 @@ use core::{
 };
 
 use crate::{
-    codec,
+    codec::{self, Decodable},
     status::Status,
     error::ParseError,
 };
@@ -75,10 +75,20 @@ pub struct Connack {
 }
 
 impl Connack {
-    pub fn from_bytes(bytes: &[u8]) -> Result<Status<(usize, Self)>, ParseError> {
-    	if bytes.len() < 2 {
-    		return Ok(Status::Partial(2 - bytes.len()));
-    	}
+    pub fn flags(&self) -> Flags {
+        self.flags
+    }
+
+    pub fn return_code(&self) -> ReturnCode {
+        self.return_code
+    }
+}
+
+impl<'buf> Decodable<'buf> for Connack {
+    fn from_bytes(bytes: &[u8]) -> Result<Status<(usize, Self)>, ParseError> {
+        if bytes.len() < 2 {
+            return Ok(Status::Partial(2 - bytes.len()));
+        }
 
         let offset = 0;
 
@@ -94,14 +104,6 @@ impl Connack {
             flags,
             return_code,
         })))
-    }
-
-    pub fn flags(&self) -> Flags {
-        self.flags
-    }
-
-    pub fn return_code(&self) -> ReturnCode {
-        self.return_code
     }
 }
 

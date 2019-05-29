@@ -5,7 +5,7 @@ use core::{
 };
 
 use crate::{
-    codec,
+    codec::{self, Decodable, Encodable},
     status::Status,
     error::{ParseError, EncodeError},
     qos,
@@ -103,7 +103,25 @@ impl<'buf> Connect<'buf> {
         }
     }
 
-    pub fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, Self)>, ParseError> {
+    pub fn name(&self) -> &str {
+        self.name
+    }
+
+    pub fn level(&self) -> Level {
+        self.level
+    }
+
+    pub fn flags(&self) -> Flags {
+        self.flags
+    }
+
+    pub fn keep_alive(&self) -> u16 {
+        self.keep_alive
+    }
+}
+
+impl<'buf> Decodable<'buf> for Connect<'buf> {
+    fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, Connect<'buf>)>, ParseError> {
         let offset = 0;
 
         // read protocol name
@@ -138,8 +156,10 @@ impl<'buf> Connect<'buf> {
             keep_alive,
         })))
     }
+}
 
-    pub fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+impl<'buf> Encodable for Connect<'buf> {
+    fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
         let offset = 0;
         let offset = {
             let o = codec::string::encode_string(self.name, &mut bytes[offset..])?;
@@ -158,22 +178,6 @@ impl<'buf> Connect<'buf> {
             (offset + o)
         };
         Ok(offset)
-    }
-
-    pub fn name(&self) -> &str {
-        self.name
-    }
-
-    pub fn level(&self) -> Level {
-        self.level
-    }
-
-    pub fn flags(&self) -> Flags {
-        self.flags
-    }
-
-    pub fn keep_alive(&self) -> u16 {
-        self.keep_alive
     }
 }
 
