@@ -17,7 +17,7 @@ extern crate bitfield;
 pub mod status;
 pub mod error;
 
-mod codec;
+pub mod codec;
 
 pub mod packet;
 pub mod fixed_header;
