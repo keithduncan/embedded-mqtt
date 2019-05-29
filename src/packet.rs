@@ -34,6 +34,10 @@ impl<'a> Packet<'a> {
             payload: Some(payload::Payload::Connect(payload)),
         })
     }
+
+    pub fn fixed_header(&self) -> &FixedHeader {
+        &self.fixed_header
+    }
 }
 
 impl<'a> Decodable<'a> for Packet<'a> {
