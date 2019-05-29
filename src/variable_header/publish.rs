@@ -59,16 +59,41 @@ impl<'a> Encodable for Publish<'a> {
 		let offset = 0;
 		let offset = {
 			let o = self.topic_name.to_bytes(&mut bytes[offset..])?;
-			#[cfg(feature = "std")]
-			println!("topic_name {:?}", self.topic_name);
 			offset + o
 		};
 		let offset = if let Some(packet_identifier) = self.packet_identifier {
-			let o = codec::values::encode_u16(packet_identifier, bytes)?;
+			let o = codec::values::encode_u16(packet_identifier, &mut bytes[offset..])?;
 			offset + o
 		} else {
 			offset
 		};
 		Ok(offset)
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn encode() {
+		let header = Publish {
+			topic_name: "a/b",
+			packet_identifier: Some(1),
+		};
+
+		let mut buf = [0u8; 7];
+		let res = header.to_bytes(&mut buf[..]);
+		assert_eq!(res, Ok(7));
+
+		assert_eq!(buf, [
+			0b0000_0000,
+			0b0000_0011,
+			0x61,
+			0x2f,
+			0x62,
+			0b0000_0000,
+			0b0000_0001,
+		]);
 	}
 }
