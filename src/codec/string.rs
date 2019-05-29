@@ -143,4 +143,12 @@ mod tests {
         buf.write(inp.as_bytes()).unwrap();
         assert_eq!(Err(DecodeError::Utf8), parse_string(buf.get_ref().as_ref()));
     }
+
+    #[test]
+    fn encode() {
+        let mut buf = [0u8; 3];
+        let result = encode_string("a", &mut buf[0..3]);
+        assert_eq!(result, Ok(3));
+        assert_eq!(buf, [0b00000000, 0b00000001, 0x61]);
+    }
 }

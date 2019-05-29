@@ -209,14 +209,14 @@ mod tests {
         assert_eq!(flags.has_username(), true);
         assert_eq!(flags.has_password(), true);
         assert_eq!(flags.will_retain(), true);
-        assert_eq!(flags.will_flag(), true);
+        assert_eq!(flags.has_will(), true);
         assert_eq!(flags.clean_session(), true);
 
         let flags = Flags(0b00000000);
         assert_eq!(flags.has_username(), false);
         assert_eq!(flags.has_password(), false);
         assert_eq!(flags.will_retain(), false);
-        assert_eq!(flags.will_flag(), false);
+        assert_eq!(flags.has_will(), false);
         assert_eq!(flags.clean_session(), false);
     }
 
@@ -257,7 +257,7 @@ mod tests {
 
         assert_eq!(connect, Ok(Status::Complete((10, Connect {
             name: "MQTT",
-            level: 4,
+            level: Level::Level3_1_1,
             flags: Flags(0b11001110),
             keep_alive: 10,
         }))));

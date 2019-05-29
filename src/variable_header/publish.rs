@@ -59,6 +59,8 @@ impl<'a> Encodable for Publish<'a> {
 		let offset = 0;
 		let offset = {
 			let o = self.topic_name.to_bytes(&mut bytes[offset..])?;
+			#[cfg(feature = "std")]
+			println!("topic_name {:?}", self.topic_name);
 			offset + o
 		};
 		let offset = if let Some(packet_identifier) = self.packet_identifier {

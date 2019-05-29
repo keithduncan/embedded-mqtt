@@ -1,6 +1,7 @@
 use core::{
     result::Result,
     convert::{From, TryInto},
+    fmt::Debug,
 };
 
 use crate::{
@@ -49,7 +50,7 @@ impl From<PublishFlags> for PacketFlags {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug, Default)]
+#[derive(PartialEq, Eq, Clone, Copy, Default)]
 pub struct PublishFlags(u8);
 
 bitfield_bitrange! {
@@ -71,6 +72,15 @@ impl PublishFlags {
     #[allow(dead_code)]
     pub fn set_qos(&mut self, qos: qos::QoS) {
         self.set_bit_range(2, 1, u8::from(qos))
+    }
+}
+
+impl Debug for PublishFlags {
+    bitfield_debug! {
+        struct PublishFlags;
+        pub dup, _                : 3;
+        pub into qos::QoS, qos, _ : 2, 1;
+        pub retain, _             : 0;
     }
 }
 
@@ -230,7 +240,7 @@ fn encode_packet_type(r#type: PacketType, flags: PacketFlags) -> u8 {
         PacketType::Pubrec => 5,
         PacketType::Pubrel => 6,
         PacketType::Pubcomp => 7,
-        PacketType::Subscribe =>8,
+        PacketType::Subscribe => 8,
         PacketType::Suback => 9,
         PacketType::Unsubscribe => 10,
         PacketType::Unsuback => 11,
@@ -308,7 +318,7 @@ mod tests {
         ];
 
         for (buf, expected_type) in inputs.iter_mut() {
-            let expected_flag = buf[0] & 0xF;
+            let expected_flag = PacketFlags(buf[0] & 0xF);
             let (packet_type, flag) = parse_packet_type(buf[0]).unwrap();
             assert_eq!(packet_type, *expected_type);
             assert_eq!(flag, expected_flag);
@@ -360,7 +370,7 @@ mod tests {
             let mut input = 03 << 4 | i;
             let (packet_type, flag) = parse_packet_type(input).unwrap();
             assert_eq!(packet_type, PacketType::Publish);
-            assert_eq!(flag, i);
+            assert_eq!(flag, PacketFlags(i));
         }
     }
 
@@ -405,7 +415,7 @@ mod tests {
         let (offset, header) = FixedHeader::from_bytes(&buf).unwrap().unwrap();
         assert_eq!(offset, 2);
         assert_eq!(header.r#type(), PacketType::Connect);
-        assert_eq!(header.flags(), 0);
+        assert_eq!(header.flags(), PacketFlags(0));
         assert_eq!(header.len(), 0);
     }
 
@@ -421,7 +431,7 @@ mod tests {
         let (offset, header) = FixedHeader::from_bytes(&buf).unwrap().unwrap();
         assert_eq!(offset, 5);
         assert_eq!(header.r#type(), PacketType::Publish);
-        assert_eq!(header.flags(), 0);
+        assert_eq!(header.flags(), PacketFlags(0));
         assert_eq!(header.len(), 2097152);
     }
 
