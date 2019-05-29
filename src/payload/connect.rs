@@ -9,13 +9,13 @@ use crate::{
     variable_header::connect::Flags,
 };
 
-pub struct Will<'a, 'b> {
-    topic: &'a str,
-    message: &'b [u8],
+pub struct Will<'buf> {
+    topic: &'buf str,
+    message: &'buf [u8],
 }
 
-impl<'buf> Decodable<'buf> for Will<'buf, 'buf> {
-    fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, Will<'buf, 'buf>)>, DecodeError> {
+impl<'buf> Decodable<'buf> for Will<'buf> {
+    fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, Will<'buf>)>, DecodeError> {
         let offset = 0;
         let (offset, topic) = read!(codec::string::parse_string, bytes, offset);
         let (offset, message) = read!(codec::values::parse_bytes, bytes, offset);
@@ -27,7 +27,7 @@ impl<'buf> Decodable<'buf> for Will<'buf, 'buf> {
     }
 }
 
-impl<'a, 'b> Encodable for Will<'a, 'b> {
+impl<'buf> Encodable for Will<'buf> {
     fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
         let offset = 0;
         let offset = codec::string::encode_string(self.topic, &mut bytes[offset..])?;
@@ -36,14 +36,23 @@ impl<'a, 'b> Encodable for Will<'a, 'b> {
     }
 }
 
-pub struct Connect<'a, 'b, 'c, 'd, 'e> {
-    client_id: &'a str,
-    will: Option<Will<'b, 'c>>,
-    username: Option<&'d str>,
-    password: Option<&'e [u8]>,
+impl<'buf> Will<'buf> {
+    pub fn new(topic: &'buf str, message: &'buf [u8]) -> Self {
+        Will {
+            topic,
+            message,
+        }
+    }
 }
 
-impl<'buf> Connect<'buf, 'buf, 'buf, 'buf, 'buf> {
+pub struct Connect<'buf> {
+    client_id: &'buf str,
+    will: Option<Will<'buf>>,
+    username: Option<&'buf str>,
+    password: Option<&'buf [u8]>,
+}
+
+impl<'buf> Connect<'buf> {
     pub fn from_bytes(flags: Flags, bytes: &'buf [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
         let offset = 0;
 
@@ -79,7 +88,7 @@ impl<'buf> Connect<'buf, 'buf, 'buf, 'buf, 'buf> {
     }
 }
 
-impl<'a, 'b, 'c, 'd, 'e> Encodable for Connect<'a, 'b, 'c, 'd, 'e> {
+impl<'buf> Encodable for Connect<'buf> {
     fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
         let offset = 0;
 
