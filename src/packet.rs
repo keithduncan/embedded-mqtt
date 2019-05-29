@@ -11,6 +11,7 @@ use crate::{
     status::Status,
     error::{DecodeError, EncodeError},
     codec::{Decodable, Encodable},
+    qos,
 };
 
 #[derive(Debug)]
@@ -49,6 +50,9 @@ impl<'a> Packet<'a> {
     }
 
     pub fn publish(flags: fixed_header::PublishFlags, variable_header: variable_header::publish::Publish<'a>, payload: &'a [u8]) -> Result<Self, EncodeError> {
+        // TODO encode this using type states
+        assert!(flags.qos().expect("valid qos") == qos::QoS::AtMostOnce || variable_header.packet_identifier().is_some());
+
         let len = u32::try_from(variable_header.encoded_len() + payload.encoded_len())?;
         Ok(Self {
             fixed_header: FixedHeader::new(

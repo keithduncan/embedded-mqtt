@@ -49,7 +49,7 @@ impl From<PublishFlags> for PacketFlags {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, Default)]
 pub struct PublishFlags(u8);
 
 bitfield_bitrange! {

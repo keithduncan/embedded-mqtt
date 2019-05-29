@@ -17,10 +17,10 @@ pub struct Publish<'a> {
 }
 
 impl<'a> Publish<'a> {
-	pub fn new(topic_name: &'a str, packet_identifier: PacketId) -> Self {
+	pub fn new(topic_name: &'a str, packet_identifier: Option<PacketId>) -> Self {
 		Self {
-			packet_identifier: Some(packet_identifier),
 			topic_name,
+			packet_identifier,
 		}
 	}
 
