@@ -6,18 +6,21 @@ use crate::{
 };
 
 pub mod connect;
+pub mod subscribe;
 
 #[derive(Debug)]
 pub enum Payload<'a> {
 	Bytes(&'a [u8]),
 	Connect(connect::Connect<'a>),
+	Subscribe(subscribe::Subscribe<'a>),
 }
 
 impl<'a> Encodable for Payload<'a> {
 	fn encoded_len(&self) -> usize {
 		match self {
-			&Payload::Bytes(ref c)   => c.len(),
-			&Payload::Connect(ref c) => c.encoded_len(),
+			&Payload::Bytes(ref c)     => c.len(),
+			&Payload::Connect(ref c)   => c.encoded_len(),
+			&Payload::Subscribe(ref c) => c.encoded_len(),
 		}
 	}
 
@@ -33,6 +36,7 @@ impl<'a> Encodable for Payload<'a> {
 				Ok(c.len())
 			},
 			&Payload::Connect(ref c) => c.to_bytes(bytes),
+			&Payload::Subscribe(ref c) => c.to_bytes(bytes),
 		}
 	}
 }

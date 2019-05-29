@@ -22,9 +22,9 @@ pub struct Packet<'a> {
 }
 
 impl<'a> Packet<'a> {
-    pub fn connect(variable_header: variable_header::connect::Connect<'a>, payload: payload::connect::Connect<'a>) -> Result<Packet<'a>, EncodeError> {
+    pub fn connect(variable_header: variable_header::connect::Connect<'a>, payload: payload::connect::Connect<'a>) -> Result<Self, EncodeError> {
         let len = u32::try_from(variable_header.encoded_len() + payload.encoded_len())?;
-        Ok(Packet {
+        Ok(Self {
             fixed_header: FixedHeader::new(
                 fixed_header::PacketType::Connect,
                 0b0000,
@@ -32,6 +32,19 @@ impl<'a> Packet<'a> {
             ),
             variable_header: Some(variable_header::VariableHeader::Connect(variable_header)),
             payload: Some(payload::Payload::Connect(payload)),
+        })
+    }
+
+    pub fn subscribe(variable_header: variable_header::packet_identifier::PacketIdentifier, payload: payload::subscribe::Subscribe<'a>) -> Result<Self, EncodeError> {
+        let len = u32::try_from(variable_header.encoded_len() + payload.encoded_len())?;
+        Ok(Self {
+            fixed_header: FixedHeader::new(
+                fixed_header::PacketType::Subscribe,
+                0b0010,
+                len,
+            ),
+            variable_header: Some(variable_header::VariableHeader::Subscribe(variable_header)),
+            payload: Some(payload::Payload::Subscribe(payload)),
         })
     }
 
@@ -77,7 +90,7 @@ impl<'a> Decodable<'a> for Packet<'a> {
 
         let payload = Some(payload::Payload::Bytes(payload));
 
-        Ok(Status::Complete((fixed_header_offset + fixed_header.len() as usize, Packet {
+        Ok(Status::Complete((fixed_header_offset + fixed_header.len() as usize, Self {
             fixed_header,
             variable_header,
             payload,
