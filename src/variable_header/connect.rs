@@ -51,7 +51,7 @@ impl Flags {
         pub has_password,  set_has_password  : 6;
         pub will_retain,   set_will_retain   : 5;
         
-        pub will_flag,     set_will_flag     : 2;
+        pub has_will,      set_has_will_flag : 2;
         pub clean_session, set_clean_session : 1;
     }
 
@@ -79,7 +79,7 @@ impl Debug for Flags {
         pub has_password, _       : 6;
         pub will_retain, _        : 5;
         pub into QoS, will_qos, _ : 4, 3;
-        pub will_flag, _          : 2;
+        pub has_will, _           : 2;
         pub clean_session, _      : 1;
     }
 }
