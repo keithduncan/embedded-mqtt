@@ -68,13 +68,13 @@ impl Flags {
         pub clean_session, set_clean_session : 1;
     }
 
-    fn will_qos(&self) -> Result<qos::QoS, qos::Error> {
+    pub fn will_qos(&self) -> Result<qos::QoS, qos::Error> {
         let qos_bits: u8 = self.bit_range(4, 3);
         qos_bits.try_into()
     }
 
     #[allow(dead_code)]
-    fn set_will_qos(&mut self, qos: qos::QoS) {
+    pub fn set_will_qos(&mut self, qos: qos::QoS) {
         self.set_bit_range(4, 3, u8::from(qos))
     }
 }

@@ -35,7 +35,7 @@ impl<'a> Encodable for Payload<'a> {
 
 				Ok(c.len())
 			},
-			&Payload::Connect(ref c) => c.to_bytes(bytes),
+			&Payload::Connect(ref c)   => c.to_bytes(bytes),
 			&Payload::Subscribe(ref c) => c.to_bytes(bytes),
 		}
 	}

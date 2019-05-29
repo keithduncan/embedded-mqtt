@@ -6,16 +6,18 @@ use crate::{
     error::{DecodeError, EncodeError},
 };
 
+use super::PacketId;
+
 // TODO make this a non-zero u16 when it is stable
 #[derive(PartialEq, Debug)]
-pub struct PacketIdentifier(u16);
+pub struct PacketIdentifier(PacketId);
 
 impl PacketIdentifier {
-    pub fn new(packet_identifier: u16) -> Self {
+    pub fn new(packet_identifier: PacketId) -> Self {
         Self(packet_identifier)
     }
 
-    pub fn packet_identifier(&self) -> u16 {
+    pub fn packet_identifier(&self) -> PacketId {
         self.0
     }
 }

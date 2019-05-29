@@ -10,6 +10,7 @@ use crate::{
 pub mod connect;
 pub mod connack;
 pub mod packet_identifier;
+pub mod publish;
 
 #[derive(Debug)]
 pub enum VariableHeader<'a> {
@@ -17,7 +18,10 @@ pub enum VariableHeader<'a> {
     Connack(connack::Connack),
     Subscribe(packet_identifier::PacketIdentifier),
     Suback(packet_identifier::PacketIdentifier),
+    Publish(publish::Publish<'a>),
 }
+
+pub type PacketId = u16;
 
 macro_rules! from_bytes {
     ($fn:ident, $parser:path, $name:ident) => (
@@ -48,16 +52,18 @@ impl<'a> VariableHeader<'a> {
 impl<'buf> Encodable for VariableHeader<'buf> {
     fn encoded_len(&self) -> usize {
         match self {
-            &VariableHeader::Connect(ref c) => c.encoded_len(),
+            &VariableHeader::Connect(ref c)   => c.encoded_len(),
             &VariableHeader::Subscribe(ref c) => c.encoded_len(),
+            &VariableHeader::Publish(ref c)   => c.encoded_len(),
             _ => unimplemented!()
         }
     }
 
     fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
         match self {
-            &VariableHeader::Connect(ref c) => c.to_bytes(bytes),
+            &VariableHeader::Connect(ref c)   => c.to_bytes(bytes),
             &VariableHeader::Subscribe(ref c) => c.to_bytes(bytes),
+            &VariableHeader::Publish(ref c)   => c.to_bytes(bytes),
             _ => unimplemented!(),
         }
     }

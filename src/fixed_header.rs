@@ -1,10 +1,16 @@
-use core::result::Result;
+use core::{
+    result::Result,
+    convert::{From, TryInto},
+};
 
 use crate::{
     codec::{self, Decodable, Encodable},
     error::{DecodeError, EncodeError},
     status::Status,
+    qos,
 };
+
+use bitfield::BitRange;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum PacketType {
@@ -24,7 +30,55 @@ pub enum PacketType {
     Disconnect,
 }
 
-pub type PacketFlags = u8;
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+pub struct PacketFlags(u8);
+
+impl PacketFlags {
+    pub fn connect() -> Self {
+        Self(0b0000)
+    }
+
+    pub fn subscribe() -> Self {
+        Self(0b0010)
+    }
+}
+
+impl From<PublishFlags> for PacketFlags {
+    fn from(flags: PublishFlags) -> Self {
+        PacketFlags(flags.0)
+    }
+}
+
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+pub struct PublishFlags(u8);
+
+bitfield_bitrange! {
+    struct PublishFlags(u8)
+}
+
+impl PublishFlags {
+    bitfield_fields! {
+        bool;
+        pub dup,    set_dup    : 3;
+        pub retain, set_retain : 0;
+    }
+
+    pub fn qos(&self) -> Result<qos::QoS, qos::Error> {
+        let qos_bits: u8 = self.bit_range(2, 1);
+        qos_bits.try_into()
+    }
+
+    #[allow(dead_code)]
+    pub fn set_qos(&mut self, qos: qos::QoS) {
+        self.set_bit_range(2, 1, u8::from(qos))
+    }
+}
+
+impl From<PacketFlags> for PublishFlags {
+    fn from(flags: PacketFlags) -> Self {
+        PublishFlags(flags.0)
+    }
+}
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct FixedHeader {
@@ -162,7 +216,7 @@ fn parse_packet_type(inp: u8) -> Result<(PacketType, PacketFlags), DecodeError> 
     };
 
     // low 4 bits represent control flags
-    let flags = inp & 0xF;
+    let flags = PacketFlags(inp & 0xF);
 
     validate_flag(packet_type, flags)
 }
@@ -185,7 +239,7 @@ fn encode_packet_type(r#type: PacketType, flags: PacketFlags) -> u8 {
         PacketType::Disconnect => 14,
     };
 
-    (packet_type << 4) | flags
+    (packet_type << 4) | flags.0
 }
 
 fn validate_flag(packet_type: PacketType, flags: PacketFlags) -> Result<(PacketType, PacketFlags), DecodeError> {
@@ -209,8 +263,8 @@ fn validate_flag(packet_type: PacketType, flags: PacketFlags) -> Result<(PacketT
         PacketType::Unsubscribe,
     ];
 
-    validate_flag_val(packet_type, flags, ZERO_TYPES, 0b0000)
-        .and_then(|_| validate_flag_val(packet_type, flags, ONE_TYPES, 0b0010))
+    validate_flag_val(packet_type, flags, ZERO_TYPES, PacketFlags(0b0000))
+        .and_then(|_| validate_flag_val(packet_type, flags, ONE_TYPES, PacketFlags(0b0010)))
 }
 
 fn validate_flag_val(

@@ -10,7 +10,7 @@ pub enum QoS {
     ExactlyOnce,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum Error {
 	BadPattern,
 }

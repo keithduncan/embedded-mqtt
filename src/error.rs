@@ -4,6 +4,8 @@ use core::{
     str::Utf8Error,
 };
 
+use crate::qos;
+
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum DecodeError {
     /// Invalid packet type in header
@@ -16,6 +18,8 @@ pub enum DecodeError {
     InvalidLength,
     /// Invalid UTF-8 encoding
     Utf8,
+    /// Invalid QoS value
+    InvalidQoS(qos::Error),
     /// Invalid protocol level
     InvalidProtocolLevel,
     /// Invalid connect flag value
@@ -34,6 +38,7 @@ impl DecodeError {
             DecodeError::RemainingLength => "malformed remaining length in header",
             DecodeError::InvalidLength => "invalid buffer length",
             DecodeError::Utf8 => "invalid utf-8 encoding",
+            DecodeError::InvalidQoS(_) => "invalid QoS bit pattern",
             DecodeError::InvalidProtocolLevel => "invalid protocol level",
             DecodeError::InvalidConnectFlag => "invalid connect flag value",
             DecodeError::InvalidConnackFlag => "invalid connack flag value",
@@ -58,6 +63,12 @@ impl ::std::error::Error for DecodeError {
 impl From<Utf8Error> for DecodeError {
     fn from(_: Utf8Error) -> Self {
         DecodeError::Utf8
+    }
+}
+
+impl From<qos::Error> for DecodeError {
+    fn from(err: qos::Error) -> Self {
+        DecodeError::InvalidQoS(err)
     }
 }
 

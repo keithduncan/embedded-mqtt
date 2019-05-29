@@ -27,7 +27,7 @@ impl<'a> Packet<'a> {
         Ok(Self {
             fixed_header: FixedHeader::new(
                 fixed_header::PacketType::Connect,
-                0b0000,
+                fixed_header::PacketFlags::connect(),
                 len,
             ),
             variable_header: Some(variable_header::VariableHeader::Connect(variable_header)),
@@ -40,7 +40,7 @@ impl<'a> Packet<'a> {
         Ok(Self {
             fixed_header: FixedHeader::new(
                 fixed_header::PacketType::Subscribe,
-                0b0010,
+                fixed_header::PacketFlags::subscribe(),
                 len,
             ),
             variable_header: Some(variable_header::VariableHeader::Subscribe(variable_header)),
@@ -48,8 +48,29 @@ impl<'a> Packet<'a> {
         })
     }
 
+    pub fn publish(flags: fixed_header::PublishFlags, variable_header: variable_header::publish::Publish<'a>, payload: &'a [u8]) -> Result<Self, EncodeError> {
+        let len = u32::try_from(variable_header.encoded_len() + payload.encoded_len())?;
+        Ok(Self {
+            fixed_header: FixedHeader::new(
+                fixed_header::PacketType::Subscribe,
+                flags.into(),
+                len,
+            ),
+            variable_header: Some(variable_header::VariableHeader::Publish(variable_header)),
+            payload: Some(payload::Payload::Bytes(payload)),
+        })
+    }
+
     pub fn fixed_header(&self) -> &FixedHeader {
         &self.fixed_header
+    }
+
+    pub fn variable_header(&self) -> &Option<VariableHeader> {
+        &self.variable_header
+    }
+
+    pub fn payload(&self) -> &Option<Payload> {
+        &self.payload
     }
 }
 
