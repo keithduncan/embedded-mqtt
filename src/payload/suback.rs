@@ -90,13 +90,17 @@ impl<'a> Suback<'a> {
 
 impl<'a> Decodable<'a> for Suback<'a> {
 	fn decode(bytes: &'a [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
+		// Check all the bytes are valid return codes
+		bytes.iter()
+			.fold(Ok(()), |acc, byte| {
+				acc?;
+				ReturnCode::try_from(*byte).map(|_| ())
+			})
+			.map_err(|_| DecodeError::InvalidSubackReturnCode)?;
+
 		let return_codes = unsafe {
     		mem::transmute::<&[u8], &[ReturnCode]>(bytes)
 		};
-
-		for return_code in return_codes {
-			return_code.max_qos()?;
-		}
 
 		Ok(Status::Complete((bytes.len(), Self {
 			return_codes,
