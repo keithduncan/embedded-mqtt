@@ -11,7 +11,8 @@ pub trait Decodable<'a>
 	fn decode(bytes: &'a [u8]) -> Result<Status<(usize, Self)>, DecodeError>;
 }
 
-pub trait Encodable {
+pub trait Encodable
+	where Self: core::marker::Sized {
 	fn encoded_len(&self) -> usize;
 	fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError>;
 }

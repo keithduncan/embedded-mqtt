@@ -22,15 +22,15 @@ impl<'buf> Decodable<'buf> for &'buf str {
     }
 }
 
-impl Encodable for str {
-    fn encoded_len(&self) -> usize {
-        2 + self.len()
-    }
+// impl Encodable for str {
+//     fn encoded_len(&self) -> usize {
+//         2 + self.len()
+//     }
 
-    fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
-        encode_string(self, bytes)
-    }
-}
+//     fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+//         encode_string(self, bytes)
+//     }
+// }
 
 pub fn parse_string(bytes: &[u8]) -> Result<Status<(usize, &str)>, DecodeError> {
     let offset = 0;

@@ -6,8 +6,8 @@ use core::{
 
 use crate::{
     fixed_header::{self, FixedHeader},
-    variable_header::{self, VariableHeader},
-    payload::{self, Payload},
+    variable_header::{self, HeaderDecode},
+    payload,
     status::Status,
     error::{DecodeError, EncodeError},
     codec::{Decodable, Encodable},
@@ -16,10 +16,12 @@ use crate::{
 
 #[derive(Debug)]
 #[allow(dead_code)]
-pub struct Packet<'a> {
-    fixed_header: FixedHeader,
-    variable_header: Option<VariableHeader<'a>>,
-    payload: Option<Payload<'a>>,
+pub enum Packet<'a> {
+    Connect(FixedHeader, variable_header::Connect<'a>, payload::connect::Connect<'a>),
+    Subscribe(FixedHeader, variable_header::PacketIdentifier, payload::subscribe::Subscribe<'a>),
+    Publish(FixedHeader, variable_header::Publish<'a>, payload::Publish<'a>),
+    Pingreq(FixedHeader),
+    Pingresp(FixedHeader),
 }
 
 /// A full MQTT packet with fixed header, variable header and payload.
@@ -27,100 +29,116 @@ pub struct Packet<'a> {
 /// Variable header and payload are optional for some packet types.
 impl<'a> Packet<'a> {
     /// Create a CONNECT packet.
-    pub fn connect(variable_header: variable_header::connect::Connect<'a>, payload: payload::connect::Connect<'a>) -> Result<Self, EncodeError> {
-        Self::packet(
+    pub fn connect(variable_header: variable_header::Connect<'a>, payload: payload::Connect<'a>) -> Result<Self, EncodeError> {
+        let fields = Self::packet(
             fixed_header::PacketType::Connect,
             fixed_header::PacketFlags::CONNECT,
-            Some(variable_header::VariableHeader::Connect(variable_header)),
-            Some(payload::Payload::Connect(payload))
-        )
+            variable_header,
+            payload
+        )?;
+        Ok(Packet::Connect(fields.0, fields.1, fields.2))
     }
 
     /// Create a SUBSCRIBE packet.
-    pub fn subscribe(variable_header: variable_header::packet_identifier::PacketIdentifier, payload: payload::subscribe::Subscribe<'a>) -> Result<Self, EncodeError> {
-        Self::packet(
+    pub fn subscribe(variable_header: variable_header::PacketIdentifier, payload: payload::Subscribe<'a>) -> Result<Self, EncodeError> {
+        let fields = Self::packet(
             fixed_header::PacketType::Subscribe,
             fixed_header::PacketFlags::SUBSCRIBE,
-            Some(variable_header::VariableHeader::Subscribe(variable_header)),
-            Some(payload::Payload::Subscribe(payload)),
-        )
+            variable_header,
+            payload,
+        )?;
+        Ok(Packet::Subscribe(fields.0, fields.1, fields.2))
     }
 
     /// Create a PUBLISH packet.
-    pub fn publish(flags: fixed_header::PublishFlags, variable_header: variable_header::publish::Publish<'a>, payload: &'a [u8]) -> Result<Self, EncodeError> {
+    pub fn publish(flags: fixed_header::PublishFlags, variable_header: variable_header::Publish<'a>, payload: payload::Publish<'a>) -> Result<Self, EncodeError> {
         // TODO encode this using type states
         assert!(flags.qos().expect("valid qos") == qos::QoS::AtMostOnce || variable_header.packet_identifier().is_some());
 
-        Self::packet(
+        let fields = Self::packet(
             fixed_header::PacketType::Publish,
             flags.into(),
-            Some(variable_header::VariableHeader::Publish(variable_header)),
-            Some(payload::Payload::Bytes(payload))
-        )
+            variable_header,
+            payload
+        )?;
+        Ok(Packet::Publish(fields.0, fields.1, fields.2))
     }
 
     /// Create a PINGREQ packet.
     pub fn pingreq() -> Self {
-        Self {
-            fixed_header: FixedHeader::new(
+        Packet::Pingreq(
+            FixedHeader::new(
                 fixed_header::PacketType::Pingreq,
                 fixed_header::PacketFlags::PINGREQ,
                 0,
-            ),
-            variable_header: None,
-            payload: None,
-        }
+            )
+        )
     }
 
     /// Create a PINGRESP packet.
     pub fn pingresp() -> Self {
-        Self {
-            fixed_header: FixedHeader::new(
+        Packet::Pingresp(
+            FixedHeader::new(
                 fixed_header::PacketType::Pingresp,
                 fixed_header::PacketFlags::PINGRESP,
                 0,
-            ),
-            variable_header: None,
-            payload: None,
-        }
+            )
+        )
     }
 
     /// Create a packet with the given type, flags, variable header and payload.
     ///
     /// Constructs a fixed header with the appropriate `len` field for the given
     /// variable header and payload.
-    fn packet(r#type: fixed_header::PacketType, flags: fixed_header::PacketFlags, variable_header: Option<VariableHeader<'a>>, payload: Option<Payload<'a>>) -> Result<Self, EncodeError> {
+    fn packet<VH, P>(r#type: fixed_header::PacketType, flags: fixed_header::PacketFlags, variable_header: VH, payload: P) -> Result<(FixedHeader, VH, P), EncodeError>
+        where VH: Encodable, P: Encodable, {
         let len = u32::try_from(
-            variable_header.as_ref().map(VariableHeader::encoded_len).unwrap_or(0) +
-            payload.as_ref().map(Payload::encoded_len).unwrap_or(0)
+            variable_header.encoded_len() +
+            payload.encoded_len()
         )?;
 
-        Ok(Self {
-            fixed_header: FixedHeader::new(
+        Ok((
+            FixedHeader::new(
                 r#type,
                 flags,
                 len,
             ),
-            variable_header: variable_header,
-            payload: payload,
-        })
+            variable_header,
+            payload,
+        ))
     }
 
     /// Return a reference to the fixed header of the packet.
     ///
     /// The len field of the returned header will be valid.
     pub fn fixed_header(&self) -> &FixedHeader {
-        &self.fixed_header
+        match self {
+            &Packet::Connect(fh, ..) => &fh,
+            &Packet::Subscribe(fh, ..) => &fh,
+            &Packet::Publish(fh, ..) => &fh,
+            &Packet::Pingreq(fh, ..) => &fh,
+            &Packet::Pingresp(fh, ..) => &fh,
+        }
     }
 
-    /// Return a reference to the variable header of the packet.
-    pub fn variable_header(&self) -> &Option<VariableHeader> {
-        &self.variable_header
+    fn variable_header<VH>(&self) -> Option<&VH> where VH: Encodable {
+        match self {
+            &Packet::Connect(_, vh, ..) => Some(&vh),
+            &Packet::Subscribe(_, vh, ..) => Some(&vh),
+            &Packet::Publish(_, vh, ..) => Some(&vh),
+            &Packet::Pingreq(_) => None,
+            &Packet::Pingresp(_) => None,
+        }
     }
 
-    /// Return a reference to the payload of the packet.
-    pub fn payload(&self) -> &Option<Payload> {
-        &self.payload
+    fn payload<P>(&self) -> Option<P> where P: Encodable {
+        match self {
+            &Packet::Connect(_, _, p) => Some(&p),
+            &Packet::Subscribe(_, _, p) => Some(&p),
+            &Packet::Publish(_, _, p) => Some(&p),
+            &Packet::Pingreq(_) => None,
+            &Packet::Pingresp(_) => None,
+        }
     }
 }
 
@@ -142,7 +160,7 @@ impl<'a> Decodable<'a> for Packet<'a> {
 
         // TODO this is only duplicated while not all types have their
         // variable header parsed.
-        let (variable_header, payload) = if let Some(result) = VariableHeader::decode(fixed_header.r#type(), fixed_header.flags(), &bytes[fixed_header_offset..]) {
+        let (variable_header, payload) = if let Some(result) = VH::decode(fixed_header.flags(), &bytes[fixed_header_offset..]) {
             let (variable_header_offset, variable_header) = match result {
                 Err(e) => return Err(e),
                 Ok(Status::Partial(p)) => return Ok(Status::Partial(p)),
@@ -171,7 +189,7 @@ impl<'a> Decodable<'a> for Packet<'a> {
             (None, payload)
         };
 
-        let payload = Some(payload::Payload::Bytes(payload));
+        let payload = Some(payload);
 
         Ok(Status::Complete((fixed_header_offset + fixed_header.len() as usize, Self {
             fixed_header,
@@ -186,7 +204,7 @@ impl<'a> Encodable for Packet<'a> {
     ///
     /// The encode buffer will need to hold at least this number of bytes.
     fn encoded_len(&self) -> usize {
-        self.fixed_header.encoded_len() + self.fixed_header.len() as usize
+        self.fixed_header().encoded_len() + self.fixed_header().len() as usize
     }
 
     /// Encode a packet for sending over a network connection.
@@ -199,18 +217,18 @@ impl<'a> Encodable for Packet<'a> {
         let mut offset = 0;
 
         offset = {
-            let o = self.fixed_header.encode(&mut bytes[offset..])?;
+            let o = self.fixed_header().encode(&mut bytes[offset..])?;
             offset + o
         };
 
-        if let Some(ref variable_header) = self.variable_header {
+        if let Some(ref variable_header) = self.variable_header() {
             offset = {
                 let o = variable_header.encode(&mut bytes[offset..])?;
                 offset + o
             };
         }
 
-        let offset = if let Some(ref payload) = self.payload {
+        let offset = if let Some(ref payload) = self.payload() {
             let o = payload.encode(&mut bytes[offset..])?;
             offset + o
         } else {

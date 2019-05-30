@@ -5,11 +5,14 @@ use core::{
 };
 
 use crate::{
-    codec::{self, Decodable, Encodable},
+    fixed_header::PacketFlags,
+    codec::{self, Encodable},
     status::Status,
     error::{DecodeError, EncodeError},
     qos,
 };
+
+use super::HeaderDecode;
 
 use bitfield::BitRange;
 
@@ -134,8 +137,8 @@ impl<'buf> Connect<'buf> {
     }
 }
 
-impl<'buf> Decodable<'buf> for Connect<'buf> {
-    fn decode(bytes: &'buf [u8]) -> Result<Status<(usize, Connect<'buf>)>, DecodeError> {
+impl<'buf> HeaderDecode<'buf> for Connect<'buf> {
+    fn decode(_flags: PacketFlags, bytes: &'buf [u8]) -> Result<Status<(usize, Connect<'buf>)>, DecodeError> {
         let offset = 0;
 
         // read protocol name

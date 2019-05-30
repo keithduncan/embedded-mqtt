@@ -5,10 +5,13 @@ use core::{
 };
 
 use crate::{
-    codec::{self, Decodable, Encodable},
+    fixed_header::PacketFlags,
+    codec::{self, Encodable},
     status::Status,
     error::{DecodeError, EncodeError},
 };
+
+use super::HeaderDecode;
 
 #[derive(PartialEq, Clone, Copy)]
 pub struct Flags(u8);
@@ -125,8 +128,8 @@ impl Connack {
     }
 }
 
-impl<'buf> Decodable<'buf> for Connack {
-    fn decode(bytes: &[u8]) -> Result<Status<(usize, Self)>, DecodeError> {
+impl<'buf> HeaderDecode<'buf> for Connack {
+    fn decode(_flags: PacketFlags, bytes: &[u8]) -> Result<Status<(usize, Self)>, DecodeError> {
         if bytes.len() < 2 {
             return Ok(Status::Partial(2 - bytes.len()));
         }

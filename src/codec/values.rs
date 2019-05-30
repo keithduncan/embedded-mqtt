@@ -56,15 +56,15 @@ impl<'buf> Decodable<'buf> for &'buf [u8] {
     }
 }
 
-impl Encodable for [u8] {
-    fn encoded_len(&self) -> usize {
-        2 + self.len()
-    }
+// impl Encodable for [u8] {
+//     fn encoded_len(&self) -> usize {
+//         2 + self.len()
+//     }
 
-    fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
-        encode_bytes(self, bytes)
-    }
-}
+//     fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+//         encode_bytes(self, bytes)
+//     }
+// }
 
 pub fn parse_bytes(bytes: &[u8]) -> Result<Status<(usize, &[u8])>, DecodeError> {
     let offset = 0;

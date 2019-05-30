@@ -1,12 +1,13 @@
 use core::result::Result;
 
 use crate::{
-    codec::{self, Decodable, Encodable},
+    fixed_header::PacketFlags,
+    codec::{self, Encodable},
     status::Status,
     error::{DecodeError, EncodeError},
 };
 
-use super::PacketId;
+use super::{HeaderDecode, PacketId};
 
 // TODO make this a non-zero u16 when it is stable
 #[derive(PartialEq, Debug)]
@@ -22,8 +23,8 @@ impl PacketIdentifier {
     }
 }
 
-impl<'buf> Decodable<'buf> for PacketIdentifier {
-    fn decode(bytes: &'buf [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
+impl<'buf> HeaderDecode<'buf> for PacketIdentifier {
+    fn decode(_flags: PacketFlags, bytes: &'buf [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
         // read connack flags
         let (offset, packet_identifier) = read!(codec::values::parse_u16, bytes, 0);
 
