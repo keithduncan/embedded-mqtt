@@ -241,8 +241,6 @@ mod tests {
             payload
         ).expect("valid packet");
 
-        println!("{:#?}", publish);
-
         assert_eq!(11, publish.encoded_len());
         assert_eq!(2, publish.fixed_header().encoded_len());
         assert_eq!(9, publish.fixed_header().len());
