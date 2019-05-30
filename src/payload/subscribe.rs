@@ -29,7 +29,7 @@ impl<'a> Encodable for Subscribe<'a> {
 			.sum()
 	}
 
-	fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+	fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
 		self.topics
 			.iter()
 			.fold(Ok(0), |acc, (topic, qos)| {

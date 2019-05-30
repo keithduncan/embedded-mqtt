@@ -177,7 +177,7 @@ impl<'buf> Encodable for Connect<'buf> {
         self.name.encoded_len() + 1 + 1 + 2
     }
 
-    fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+    fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
         let offset = 0;
         let offset = {
             let o = codec::string::encode_string(self.name, &mut bytes[offset..])?;

@@ -24,7 +24,7 @@ impl<'a> Encodable for Payload<'a> {
 		}
 	}
 
-	fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+	fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
 		match self {
 			&Payload::Bytes(ref c)   => {
 				if bytes.len() < c.len() {
@@ -35,8 +35,8 @@ impl<'a> Encodable for Payload<'a> {
 
 				Ok(c.len())
 			},
-			&Payload::Connect(ref c)   => c.to_bytes(bytes),
-			&Payload::Subscribe(ref c) => c.to_bytes(bytes),
+			&Payload::Connect(ref c)   => c.encode(bytes),
+			&Payload::Subscribe(ref c) => c.encode(bytes),
 		}
 	}
 }

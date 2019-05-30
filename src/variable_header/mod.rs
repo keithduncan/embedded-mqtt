@@ -68,11 +68,11 @@ impl<'buf> Encodable for VariableHeader<'buf> {
         }
     }
 
-    fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+    fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
         match self {
-            &VariableHeader::Connect(ref c)   => c.to_bytes(bytes),
-            &VariableHeader::Subscribe(ref c) => c.to_bytes(bytes),
-            &VariableHeader::Publish(ref c)   => c.to_bytes(bytes),
+            &VariableHeader::Connect(ref c)   => c.encode(bytes),
+            &VariableHeader::Subscribe(ref c) => c.encode(bytes),
+            &VariableHeader::Publish(ref c)   => c.encode(bytes),
             _ => unimplemented!(),
         }
     }

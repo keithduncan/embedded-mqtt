@@ -152,23 +152,23 @@ impl<'a> Encodable for Packet<'a> {
         self.fixed_header.encoded_len() + self.fixed_header.len() as usize
     }
 
-    fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+    fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
         let mut offset = 0;
 
         offset = {
-            let o = self.fixed_header.to_bytes(&mut bytes[offset..])?;
+            let o = self.fixed_header.encode(&mut bytes[offset..])?;
             offset + o
         };
 
         if let Some(ref variable_header) = self.variable_header {
             offset = {
-                let o = variable_header.to_bytes(&mut bytes[offset..])?;
+                let o = variable_header.encode(&mut bytes[offset..])?;
                 offset + o
             };
         }
 
         let offset = if let Some(ref payload) = self.payload {
-            let o = payload.to_bytes(&mut bytes[offset..])?;
+            let o = payload.encode(&mut bytes[offset..])?;
             offset + o
         } else {
             offset

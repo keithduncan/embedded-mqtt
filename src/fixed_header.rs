@@ -159,7 +159,7 @@ impl Encodable for FixedHeader {
         1 + u
     }
 
-    fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+    fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
         let offset = 0;
         let offset = {
             let o = codec::values::encode_u8(encode_packet_type(self.r#type, self.flags), &mut bytes[offset..])?;

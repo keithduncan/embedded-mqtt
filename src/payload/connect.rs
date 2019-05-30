@@ -33,7 +33,7 @@ impl<'buf> Encodable for Will<'buf> {
         2 + self.topic.len() + 2 + self.message.len()
     }
 
-    fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+    fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
         let offset = 0;
         let offset = codec::string::encode_string(self.topic, &mut bytes[offset..])?;
         let offset = codec::values::encode_bytes(self.message, &mut bytes[offset..])?;
@@ -113,12 +113,12 @@ impl<'buf> Encodable for Connect<'buf> {
             self.password.as_ref().map(|p| p.encoded_len()).unwrap_or(0)
     }
 
-    fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+    fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
         let offset = 0;
 
         let offset = codec::string::encode_string(self.client_id, &mut bytes[offset..])?;
         let offset = if let Some(ref will) = self.will {
-            will.to_bytes(&mut bytes[offset..])?
+            will.encode(&mut bytes[offset..])?
         } else {
             offset
         };

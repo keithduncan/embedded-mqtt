@@ -36,7 +36,7 @@ impl Encodable for PacketIdentifier {
         2
     }
 
-    fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+    fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
         codec::values::encode_u16(self.0, bytes)
     }
 }

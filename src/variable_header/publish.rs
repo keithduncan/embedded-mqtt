@@ -55,10 +55,10 @@ impl<'a> Encodable for Publish<'a> {
 		self.topic_name.encoded_len() + self.packet_identifier.map(|_| 2).unwrap_or(0)
 	}
 
-	fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+	fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
 		let offset = 0;
 		let offset = {
-			let o = self.topic_name.to_bytes(&mut bytes[offset..])?;
+			let o = self.topic_name.encode(&mut bytes[offset..])?;
 			offset + o
 		};
 		let offset = if let Some(packet_identifier) = self.packet_identifier {
@@ -85,7 +85,7 @@ mod tests {
 		assert_eq!(7, header.encoded_len());
 
 		let mut buf = [0u8; 7];
-		let res = header.to_bytes(&mut buf[..]);
+		let res = header.encode(&mut buf[..]);
 		assert_eq!(res, Ok(7));
 
 		assert_eq!(buf, [

@@ -27,7 +27,7 @@ impl Encodable for str {
         2 + self.len()
     }
 
-    fn to_bytes(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+    fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
         encode_string(self, bytes)
     }
 }
