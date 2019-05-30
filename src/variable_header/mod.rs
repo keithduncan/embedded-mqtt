@@ -58,24 +58,28 @@ impl<'a> VariableHeader<'a> {
     }
 }
 
-impl<'buf> Encodable for VariableHeader<'buf> {
-    fn encoded_len(&self) -> usize {
-        match self {
-            &VariableHeader::Connect(ref c)   => c.encoded_len(),
-            &VariableHeader::Subscribe(ref c) => c.encoded_len(),
-            &VariableHeader::Publish(ref c)   => c.encoded_len(),
-            &VariableHeader::Connack(ref c)   => c.encoded_len(),
-            &VariableHeader::Suback(ref c)    => c.encoded_len(),
+macro_rules! encode {
+    ($($enum:ident),+) => (
+        fn encoded_len(&self) -> usize {
+            match self {
+                $( &VariableHeader::$enum(ref c) => c.encoded_len(), )+
+            }
         }
-    }
 
-    fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
-        match self {
-            &VariableHeader::Connect(ref c)   => c.encode(bytes),
-            &VariableHeader::Subscribe(ref c) => c.encode(bytes),
-            &VariableHeader::Publish(ref c)   => c.encode(bytes),
-            &VariableHeader::Connack(ref c)   => c.encode(bytes),
-            &VariableHeader::Suback(ref c)    => c.encode(bytes),
+        fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+            match self {
+                $( &VariableHeader::$enum(ref c) => c.encode(bytes), )+
+            }
         }
-    }
+    )
+}
+
+impl<'buf> Encodable for VariableHeader<'buf> {
+    encode!(
+        Connect,
+        Connack,
+        Subscribe,
+        Suback,
+        Publish
+    );
 }
