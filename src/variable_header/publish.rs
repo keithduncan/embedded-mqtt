@@ -11,7 +11,7 @@ use crate::{
 	qos,
 };
 
-use super::PacketId;
+use super::{PacketId, HeaderDecode};
 
 #[derive(Debug)]
 pub struct Publish<'a> {
@@ -27,7 +27,17 @@ impl<'a> Publish<'a> {
 		}
 	}
 
-	pub fn decode(flags: PacketFlags, bytes: &'a [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
+	pub fn topic_name(&self) -> &'a str {
+		self.topic_name
+	}
+
+	pub fn packet_identifier(&self) -> Option<PacketId> {
+		self.packet_identifier
+	}
+}
+
+impl<'a> HeaderDecode<'a> for Publish<'a> {
+	fn decode(flags: PacketFlags, bytes: &'a [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
 		let flags = PublishFlags::try_from(flags)?;
 
 		let offset = 0;
@@ -44,14 +54,6 @@ impl<'a> Publish<'a> {
 			topic_name,
 			packet_identifier
 		})))
-	}
-
-	pub fn topic_name(&self) -> &'a str {
-		self.topic_name
-	}
-
-	pub fn packet_identifier(&self) -> Option<PacketId> {
-		self.packet_identifier
 	}
 }
 

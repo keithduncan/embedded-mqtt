@@ -4,7 +4,7 @@ use crate::{
     status::Status,
     fixed_header::{PacketType, PacketFlags},
     error::{DecodeError, EncodeError},
-    codec::{Decodable, Encodable},
+    codec::Encodable,
 };
 
 pub mod connect;
@@ -22,12 +22,17 @@ pub enum VariableHeader<'a> {
     Puback(packet_identifier::PacketIdentifier),
 }
 
+pub trait HeaderDecode<'a>
+    where Self: core::marker::Sized {
+    fn decode(flags: PacketFlags, bytes: &'a [u8]) -> Result<Status<(usize, Self)>, DecodeError>;
+}
+
 pub type PacketId = u16;
 
 macro_rules! decode {
     ($fn:ident, $parser:path, $name:ident) => (
-        fn $fn(bytes: &'a [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
-            let (offset, var_header) = complete!($parser(bytes));
+        fn $fn(flags: PacketFlags, bytes: &'a [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
+            let (offset, var_header) = complete!($parser(flags, bytes));
             Ok(Status::Complete((offset, VariableHeader::$name(var_header))))
         }
     )
@@ -42,10 +47,10 @@ impl<'a> VariableHeader<'a> {
 
     pub fn decode(r#type: PacketType, flags: PacketFlags, bytes: &'a [u8]) -> Option<Result<Status<(usize, Self)>, DecodeError>> {
         match r#type {
-            PacketType::Connect   => Some(Self::connect(bytes)),
-            PacketType::Connack   => Some(Self::connack(bytes)),
-            PacketType::Subscribe => Some(Self::subscribe(bytes)),
-            PacketType::Suback    => Some(Self::suback(bytes)),
+            PacketType::Connect   => Some(Self::connect(flags, bytes)),
+            PacketType::Connack   => Some(Self::connack(flags, bytes)),
+            PacketType::Subscribe => Some(Self::subscribe(flags, bytes)),
+            PacketType::Suback    => Some(Self::suback(flags, bytes)),
             PacketType::Publish   => {
                 match publish::Publish::decode(flags, bytes) {
                     Ok(Status::Partial(n)) => return Some(Ok(Status::Partial(n))),
@@ -55,7 +60,7 @@ impl<'a> VariableHeader<'a> {
                     },
                 };
             },
-            PacketType::Puback    => Some(Self::puback(bytes)),
+            PacketType::Puback    => Some(Self::puback(flags, bytes)),
             _ => None,
         }
     }
