@@ -5,9 +5,9 @@ use core::{
 };
 
 use crate::{
-    codec::{self, Decodable},
+    codec::{self, Decodable, Encodable},
     status::Status,
-    error::DecodeError,
+    error::{DecodeError, EncodeError},
 };
 
 #[derive(PartialEq, Clone, Copy)]
@@ -42,6 +42,22 @@ impl TryFrom<u8> for Flags {
     }
 }
 
+impl Encodable for Flags {
+    fn encoded_len(&self) -> usize {
+        1
+    }
+
+    fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+        if bytes.len() < 1 {
+            return Err(EncodeError::OutOfSpace)
+        }
+
+        bytes[0] = self.0;
+
+        Ok(1)
+    }
+}
+
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum ReturnCode {
     Accepted,
@@ -64,6 +80,31 @@ impl TryFrom<u8> for ReturnCode {
             5 => ReturnCode::RefusedNotAuthorized,
             _ => return Err(()),
         })
+    }
+}
+
+impl Encodable for ReturnCode {
+    fn encoded_len(&self) -> usize {
+        1
+    }
+
+    fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+        if bytes.len() < 1 {
+            return Err(EncodeError::OutOfSpace)
+        }
+
+        let val = match self {
+            &ReturnCode::Accepted => 0,
+            &ReturnCode::RefusedProtocolVersion => 1,
+            &ReturnCode::RefusedClientIdentifier => 2,
+            &ReturnCode::RefusedServerUnavailable => 3,
+            &ReturnCode::RefusedUsernameOrPassword => 4,
+            &ReturnCode::RefusedNotAuthorized => 5,
+        };
+
+        bytes[0] = val;
+
+        Ok(1)
     }
 }
 
@@ -104,6 +145,18 @@ impl<'buf> Decodable<'buf> for Connack {
             flags,
             return_code,
         })))
+    }
+}
+
+impl Encodable for Connack {
+    fn encoded_len(&self) -> usize {
+        2
+    }
+
+    fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
+        self.flags.encode(&mut bytes[0..])?;
+        self.return_code.encode(&mut bytes[1..])?;
+        Ok(2)
     }
 }
 

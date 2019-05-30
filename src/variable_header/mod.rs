@@ -64,7 +64,8 @@ impl<'buf> Encodable for VariableHeader<'buf> {
             &VariableHeader::Connect(ref c)   => c.encoded_len(),
             &VariableHeader::Subscribe(ref c) => c.encoded_len(),
             &VariableHeader::Publish(ref c)   => c.encoded_len(),
-            _ => unimplemented!()
+            &VariableHeader::Connack(ref c)   => c.encoded_len(),
+            &VariableHeader::Suback(ref c)    => c.encoded_len(),
         }
     }
 
@@ -73,7 +74,8 @@ impl<'buf> Encodable for VariableHeader<'buf> {
             &VariableHeader::Connect(ref c)   => c.encode(bytes),
             &VariableHeader::Subscribe(ref c) => c.encode(bytes),
             &VariableHeader::Publish(ref c)   => c.encode(bytes),
-            _ => unimplemented!(),
+            &VariableHeader::Connack(ref c)   => c.encode(bytes),
+            &VariableHeader::Suback(ref c)    => c.encode(bytes),
         }
     }
 }
