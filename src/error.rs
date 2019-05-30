@@ -28,6 +28,8 @@ pub enum DecodeError {
     InvalidConnackFlag,
     /// Invalid Connack Return Code
     InvalidConnackReturnCode,
+    /// Invalid Suback Return Code
+    InvalidSubackReturnCode,
 }
 
 impl DecodeError {
@@ -43,6 +45,7 @@ impl DecodeError {
             DecodeError::InvalidConnectFlag => "invalid connect flag value",
             DecodeError::InvalidConnackFlag => "invalid connack flag value",
             DecodeError::InvalidConnackReturnCode => "invalid connack return code",
+            DecodeError::InvalidSubackReturnCode => "invalid suback return code",
         }
     }
 }
