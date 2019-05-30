@@ -51,7 +51,7 @@ pub fn encode_u16(value: u16, bytes: &mut [u8]) -> Result<usize, EncodeError> {
 }
 
 impl<'buf> Decodable<'buf> for &'buf [u8] {
-    fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, &'buf [u8])>, DecodeError> {
+    fn decode(bytes: &'buf [u8]) -> Result<Status<(usize, &'buf [u8])>, DecodeError> {
         parse_bytes(bytes)
     }
 }

@@ -132,7 +132,7 @@ impl FixedHeader {
 }
 
 impl<'buf> Decodable<'buf> for FixedHeader {
-    fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
+    fn decode(bytes: &'buf [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
         // "bytes" must be at least 2 bytes long to be a valid fixed header
         if bytes.len() < 2 {
             return Ok(Status::Partial(2 - bytes.len()));
@@ -426,7 +426,7 @@ mod tests {
             01 << 4 | 0b0000, // PacketType::Connect
             0,                // remaining length
         ];
-        let (offset, header) = FixedHeader::from_bytes(&buf).unwrap().unwrap();
+        let (offset, header) = FixedHeader::decode(&buf).unwrap().unwrap();
         assert_eq!(offset, 2);
         assert_eq!(header.r#type(), PacketType::Connect);
         assert_eq!(header.flags(), PacketFlags(0));
@@ -442,7 +442,7 @@ mod tests {
             0x80,
             0x1,
         ];
-        let (offset, header) = FixedHeader::from_bytes(&buf).unwrap().unwrap();
+        let (offset, header) = FixedHeader::decode(&buf).unwrap().unwrap();
         assert_eq!(offset, 5);
         assert_eq!(header.r#type(), PacketType::Publish);
         assert_eq!(header.flags(), PacketFlags(0));
@@ -452,7 +452,7 @@ mod tests {
     #[test]
     fn bad_len() {
         let buf = [03 << 4 | 0];
-        let result = FixedHeader::from_bytes(&buf);
+        let result = FixedHeader::decode(&buf);
         assert_eq!(result, Ok(Status::Partial(1)));
     }
 }

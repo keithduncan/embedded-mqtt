@@ -85,7 +85,7 @@ impl Connack {
 }
 
 impl<'buf> Decodable<'buf> for Connack {
-    fn from_bytes(bytes: &[u8]) -> Result<Status<(usize, Self)>, DecodeError> {
+    fn decode(bytes: &[u8]) -> Result<Status<(usize, Self)>, DecodeError> {
         if bytes.len() < 2 {
             return Ok(Status::Partial(2 - bytes.len()));
         }

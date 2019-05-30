@@ -23,7 +23,7 @@ impl PacketIdentifier {
 }
 
 impl<'buf> Decodable<'buf> for PacketIdentifier {
-    fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
+    fn decode(bytes: &'buf [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
         // read connack flags
         let (offset, packet_identifier) = read!(codec::values::parse_u16, bytes, 0);
 

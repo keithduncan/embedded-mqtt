@@ -17,7 +17,7 @@ use super::{
 };
 
 impl<'buf> Decodable<'buf> for &'buf str {
-    fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, &'buf str)>, DecodeError> {
+    fn decode(bytes: &'buf [u8]) -> Result<Status<(usize, &'buf str)>, DecodeError> {
         parse_string(bytes)
     }
 }

@@ -16,7 +16,7 @@ pub struct Will<'buf> {
 }
 
 impl<'buf> Decodable<'buf> for Will<'buf> {
-    fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, Will<'buf>)>, DecodeError> {
+    fn decode(bytes: &'buf [u8]) -> Result<Status<(usize, Will<'buf>)>, DecodeError> {
         let offset = 0;
         let (offset, topic) = read!(codec::string::parse_string, bytes, offset);
         let (offset, message) = read!(codec::values::parse_bytes, bytes, offset);
@@ -70,13 +70,13 @@ impl<'buf> Connect<'buf> {
 }
 
 impl<'buf> Connect<'buf> {
-    pub fn from_bytes(flags: Flags, bytes: &'buf [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
+    pub fn decode(flags: Flags, bytes: &'buf [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
         let offset = 0;
 
         let (offset, client_id) = read!(codec::string::parse_string, bytes, offset);
 
         let (offset, will) = if flags.has_will() {
-            let (offset, will) = read!(Will::from_bytes, bytes, offset);
+            let (offset, will) = read!(Will::decode, bytes, offset);
             (offset, Some(will))
         } else {
             (offset, None)

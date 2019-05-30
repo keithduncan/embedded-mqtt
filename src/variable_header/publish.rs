@@ -24,7 +24,7 @@ impl<'a> Publish<'a> {
 		}
 	}
 
-	pub fn from_bytes(flags: PublishFlags, bytes: &'a [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
+	pub fn decode(flags: PublishFlags, bytes: &'a [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
 		let offset = 0;
 		let (offset, topic_name) = read!(codec::string::parse_string, bytes, offset);
 

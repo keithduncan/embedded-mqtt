@@ -23,7 +23,7 @@ pub enum VariableHeader<'a> {
 
 pub type PacketId = u16;
 
-macro_rules! from_bytes {
+macro_rules! decode {
     ($fn:ident, $parser:path, $name:ident) => (
         fn $fn(bytes: &'a [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
             let (offset, var_header) = complete!($parser(bytes));
@@ -33,19 +33,19 @@ macro_rules! from_bytes {
 }
 
 impl<'a> VariableHeader<'a> {
-    from_bytes!(connect,   connect::Connect::from_bytes,                    Connect);
-    from_bytes!(connack,   connack::Connack::from_bytes,                    Connack);
-    from_bytes!(subscribe, packet_identifier::PacketIdentifier::from_bytes, Subscribe);
-    from_bytes!(suback,    packet_identifier::PacketIdentifier::from_bytes, Suback);
+    decode!(connect,   connect::Connect::decode,                    Connect);
+    decode!(connack,   connack::Connack::decode,                    Connack);
+    decode!(subscribe, packet_identifier::PacketIdentifier::decode, Subscribe);
+    decode!(suback,    packet_identifier::PacketIdentifier::decode, Suback);
 
-    pub fn from_bytes(r#type: PacketType, flags: PacketFlags, bytes: &'a [u8]) -> Option<Result<Status<(usize, Self)>, DecodeError>> {
+    pub fn decode(r#type: PacketType, flags: PacketFlags, bytes: &'a [u8]) -> Option<Result<Status<(usize, Self)>, DecodeError>> {
         match r#type {
             PacketType::Connect   => Some(VariableHeader::connect(bytes)),
             PacketType::Connack   => Some(VariableHeader::connack(bytes)),
             PacketType::Subscribe => Some(VariableHeader::subscribe(bytes)),
             PacketType::Suback    => Some(VariableHeader::suback(bytes)),
             PacketType::Publish   => {
-                let (offset, var_header) = match publish::Publish::from_bytes(flags.into(), bytes) {
+                let (offset, var_header) = match publish::Publish::decode(flags.into(), bytes) {
                     Ok(Status::Partial(n)) => return Some(Ok(Status::Partial(n))),
                     Err(e) => return Some(Err(e)),
 

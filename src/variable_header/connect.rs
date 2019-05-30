@@ -135,7 +135,7 @@ impl<'buf> Connect<'buf> {
 }
 
 impl<'buf> Decodable<'buf> for Connect<'buf> {
-    fn from_bytes(bytes: &'buf [u8]) -> Result<Status<(usize, Connect<'buf>)>, DecodeError> {
+    fn decode(bytes: &'buf [u8]) -> Result<Status<(usize, Connect<'buf>)>, DecodeError> {
         let offset = 0;
 
         // read protocol name
@@ -253,7 +253,7 @@ mod tests {
             0b00001010, // 
         ];
 
-        let connect = Connect::from_bytes(&buf);
+        let connect = Connect::decode(&buf);
 
         assert_eq!(connect, Ok(Status::Complete((10, Connect {
             name: "MQTT",
