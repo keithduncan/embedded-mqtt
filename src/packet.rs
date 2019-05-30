@@ -60,6 +60,15 @@ impl<'a> Packet<'a> {
         )
     }
 
+    pub fn puback(variable_header: variable_header::packet_identifier::PacketIdentifier) -> Result<Self, EncodeError> {
+        Self::packet(
+            fixed_header::PacketType::Puback,
+            fixed_header::PacketFlags::PUBACK,
+            Some(variable_header::VariableHeader::Puback(variable_header)),
+            Default::default(),
+        )
+    }
+
     /// Create a PINGREQ packet.
     pub fn pingreq() -> Self {
         Self {
