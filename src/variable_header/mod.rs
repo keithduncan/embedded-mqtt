@@ -19,6 +19,7 @@ pub enum VariableHeader<'a> {
     Subscribe(packet_identifier::PacketIdentifier),
     Suback(packet_identifier::PacketIdentifier),
     Publish(publish::Publish<'a>),
+    Puback(packet_identifier::PacketIdentifier),
 }
 
 pub type PacketId = u16;
@@ -37,13 +38,14 @@ impl<'a> VariableHeader<'a> {
     decode!(connack,   connack::Connack::decode,                    Connack);
     decode!(subscribe, packet_identifier::PacketIdentifier::decode, Subscribe);
     decode!(suback,    packet_identifier::PacketIdentifier::decode, Suback);
+    decode!(puback,    packet_identifier::PacketIdentifier::decode, Puback);
 
     pub fn decode(r#type: PacketType, flags: PacketFlags, bytes: &'a [u8]) -> Option<Result<Status<(usize, Self)>, DecodeError>> {
         match r#type {
-            PacketType::Connect   => Some(VariableHeader::connect(bytes)),
-            PacketType::Connack   => Some(VariableHeader::connack(bytes)),
-            PacketType::Subscribe => Some(VariableHeader::subscribe(bytes)),
-            PacketType::Suback    => Some(VariableHeader::suback(bytes)),
+            PacketType::Connect   => Some(Self::connect(bytes)),
+            PacketType::Connack   => Some(Self::connack(bytes)),
+            PacketType::Subscribe => Some(Self::subscribe(bytes)),
+            PacketType::Suback    => Some(Self::suback(bytes)),
             PacketType::Publish   => {
                 match publish::Publish::decode(flags, bytes) {
                     Ok(Status::Partial(n)) => return Some(Ok(Status::Partial(n))),
@@ -52,7 +54,8 @@ impl<'a> VariableHeader<'a> {
                         return Some(Ok(Status::Complete((offset, VariableHeader::Publish(var_header)))))
                     },
                 };
-            }
+            },
+            PacketType::Puback    => Some(Self::puback(bytes)),
             _ => None,
         }
     }
@@ -80,6 +83,7 @@ impl<'buf> Encodable for VariableHeader<'buf> {
         Connack,
         Subscribe,
         Suback,
-        Publish
+        Publish,
+        Puback
     );
 }
