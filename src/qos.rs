@@ -1,4 +1,5 @@
 use core::{
+    fmt,
     convert::{TryFrom, From},
     result::Result,
 };
@@ -37,5 +38,26 @@ impl From<QoS> for u8 {
             QoS::AtLeastOnce => 0b01,
             QoS::ExactlyOnce => 0b10,
         }
+    }
+}
+
+impl Error {
+    fn desc(&self) -> &'static str {
+        match *self {
+            Error::BadPattern => "invalid QoS bit pattern",
+        }
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str(self.desc())
+    }
+}
+
+#[cfg(feature = "std")]
+impl ::std::error::Error for Error {
+    fn description(&self) -> &str {
+        self.desc()
     }
 }
