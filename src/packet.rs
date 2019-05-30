@@ -141,15 +141,9 @@ impl<'a> Decodable<'a> for Packet<'a> {
     fn decode(bytes: &'a [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
         let (fixed_header_offset, fixed_header) = read!(FixedHeader::decode, bytes, 0);
 
-        // TODO this is only duplicated while not all types have their
-        // variable header parsed.
         let (variable_header_consumed, variable_header) = if let Some(result) = VariableHeader::decode(fixed_header.r#type(), fixed_header.flags(), &bytes[fixed_header_offset..]) {
-            let (variable_header_offset, variable_header) = match result {
-                Err(e) => return Err(e),
-                Ok(Status::Partial(p)) => return Ok(Status::Partial(p)),
-                Ok(Status::Complete(x)) => x,
-            };
-            (variable_header_offset - fixed_header_offset, Some(variable_header))
+            let (variable_header_offset, variable_header) = complete!(result);
+            (variable_header_offset, Some(variable_header))
         } else {
             (0, None)
         };
