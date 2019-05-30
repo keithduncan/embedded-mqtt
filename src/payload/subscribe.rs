@@ -74,11 +74,11 @@ impl<'a> Subscribe<'a> {
 
 impl<'a> fmt::Debug for Subscribe<'a> {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "Subscribe {{")?;
+		write!(f, "Subscribe {{\n")?;
 		self.topics()
 			.fold(Ok(()), |acc, (topic, qos)| {
 				acc?;
-				write!(f, "Topic {:#?}, QoS {:#?}", topic, qos)
+				write!(f, "    (\n        Topic: {:#?},\n        QoS: {:#?}\n    )\n", topic, qos)
 			})?;
 		write!(f, "}}")?;
 
