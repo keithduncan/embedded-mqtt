@@ -1,6 +1,6 @@
 use core::{
     result::Result,
-    convert::{From, TryInto},
+    convert::{From, TryFrom, TryInto},
     fmt::Debug,
 };
 
@@ -96,9 +96,12 @@ impl Debug for PublishFlags {
     }
 }
 
-impl From<PacketFlags> for PublishFlags {
-    fn from(flags: PacketFlags) -> Self {
-        PublishFlags(flags.0)
+impl TryFrom<PacketFlags> for PublishFlags {
+    type Error = qos::Error;
+    fn try_from(flags: PacketFlags) -> Result<Self, Self::Error> {
+        let flags = PublishFlags(flags.0);
+        flags.qos()?;
+        Ok(flags)
     }
 }
 

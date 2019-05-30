@@ -1,7 +1,10 @@
-use core::result::Result;
+use core::{
+	convert::TryFrom,
+	result::Result,
+};
 
 use crate::{
-	fixed_header::PublishFlags,
+	fixed_header::{PacketFlags, PublishFlags},
 	codec::{self, Encodable},
 	status::Status,
 	error::{DecodeError, EncodeError},
@@ -24,7 +27,9 @@ impl<'a> Publish<'a> {
 		}
 	}
 
-	pub fn decode(flags: PublishFlags, bytes: &'a [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
+	pub fn decode(flags: PacketFlags, bytes: &'a [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
+		let flags = PublishFlags::try_from(flags)?;
+
 		let offset = 0;
 		let (offset, topic_name) = read!(codec::string::parse_string, bytes, offset);
 

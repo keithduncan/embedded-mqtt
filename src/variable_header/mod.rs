@@ -45,13 +45,13 @@ impl<'a> VariableHeader<'a> {
             PacketType::Subscribe => Some(VariableHeader::subscribe(bytes)),
             PacketType::Suback    => Some(VariableHeader::suback(bytes)),
             PacketType::Publish   => {
-                let (offset, var_header) = match publish::Publish::decode(flags.into(), bytes) {
+                match publish::Publish::decode(flags, bytes) {
                     Ok(Status::Partial(n)) => return Some(Ok(Status::Partial(n))),
                     Err(e) => return Some(Err(e)),
-
-                    Ok(Status::Complete(x)) => x,
+                    Ok(Status::Complete((offset, var_header))) => {
+                        return Some(Ok(Status::Complete((offset, VariableHeader::Publish(var_header)))))
+                    },
                 };
-                Some(Ok(Status::Complete((offset, VariableHeader::Publish(var_header)))))
             }
             _ => None,
         }
