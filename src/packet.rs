@@ -26,7 +26,7 @@ impl<'a> Packet<'a> {
     pub fn connect(variable_header: variable_header::connect::Connect<'a>, payload: payload::connect::Connect<'a>) -> Result<Self, EncodeError> {
         Self::packet(
             fixed_header::PacketType::Connect,
-            fixed_header::PacketFlags::connect(),
+            fixed_header::PacketFlags::CONNECT,
             Some(variable_header::VariableHeader::Connect(variable_header)),
             Some(payload::Payload::Connect(payload))
         )
@@ -35,7 +35,7 @@ impl<'a> Packet<'a> {
     pub fn subscribe(variable_header: variable_header::packet_identifier::PacketIdentifier, payload: payload::subscribe::Subscribe<'a>) -> Result<Self, EncodeError> {
         Self::packet(
             fixed_header::PacketType::Subscribe,
-            fixed_header::PacketFlags::subscribe(),
+            fixed_header::PacketFlags::SUBSCRIBE,
             Some(variable_header::VariableHeader::Subscribe(variable_header)),
             Some(payload::Payload::Subscribe(payload)),
         )
@@ -57,7 +57,7 @@ impl<'a> Packet<'a> {
         Self {
             fixed_header: FixedHeader::new(
                 fixed_header::PacketType::Pingreq,
-                fixed_header::PacketFlags::pingreq(),
+                fixed_header::PacketFlags::PINGREQ,
                 0,
             ),
             variable_header: None,
@@ -69,7 +69,7 @@ impl<'a> Packet<'a> {
         Self {
             fixed_header: FixedHeader::new(
                 fixed_header::PacketType::Pingresp,
-                fixed_header::PacketFlags::pingresp(),
+                fixed_header::PacketFlags::PINGRESP,
                 0,
             ),
             variable_header: None,

@@ -11,26 +11,12 @@ use bitfield::BitRange;
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub struct PacketFlags(pub u8);
 
+#[allow(dead_code)]
 impl PacketFlags {
-    #[inline]
-    pub fn connect() -> Self {
-        Self(0b0000)
-    }
-
-    #[inline]
-    pub fn subscribe() -> Self {
-        Self(0b0010)
-    }
-
-    #[inline]
-    pub fn pingreq() -> Self {
-        Self(0b0000)
-    }
-
-    #[inline]
-    pub fn pingresp() -> Self {
-        Self(0b0000)
-    }
+    pub const CONNECT: PacketFlags = PacketFlags(0b0000);
+    pub const PINGREQ: PacketFlags = PacketFlags(0b0000);
+    pub const PINGRESP: PacketFlags = PacketFlags(0b0000);
+    pub const SUBSCRIBE: PacketFlags = PacketFlags(0b0010);
 }
 
 impl From<PublishFlags> for PacketFlags {
