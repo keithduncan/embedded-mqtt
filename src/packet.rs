@@ -24,45 +24,33 @@ pub struct Packet<'a> {
 
 impl<'a> Packet<'a> {
     pub fn connect(variable_header: variable_header::connect::Connect<'a>, payload: payload::connect::Connect<'a>) -> Result<Self, EncodeError> {
-        let len = u32::try_from(variable_header.encoded_len() + payload.encoded_len())?;
-        Ok(Self {
-            fixed_header: FixedHeader::new(
-                fixed_header::PacketType::Connect,
-                fixed_header::PacketFlags::connect(),
-                len,
-            ),
-            variable_header: Some(variable_header::VariableHeader::Connect(variable_header)),
-            payload: Some(payload::Payload::Connect(payload)),
-        })
+        Self::packet(
+            fixed_header::PacketType::Connect,
+            fixed_header::PacketFlags::connect(),
+            Some(variable_header::VariableHeader::Connect(variable_header)),
+            Some(payload::Payload::Connect(payload))
+        )
     }
 
     pub fn subscribe(variable_header: variable_header::packet_identifier::PacketIdentifier, payload: payload::subscribe::Subscribe<'a>) -> Result<Self, EncodeError> {
-        let len = u32::try_from(variable_header.encoded_len() + payload.encoded_len())?;
-        Ok(Self {
-            fixed_header: FixedHeader::new(
-                fixed_header::PacketType::Subscribe,
-                fixed_header::PacketFlags::subscribe(),
-                len,
-            ),
-            variable_header: Some(variable_header::VariableHeader::Subscribe(variable_header)),
-            payload: Some(payload::Payload::Subscribe(payload)),
-        })
+        Self::packet(
+            fixed_header::PacketType::Subscribe,
+            fixed_header::PacketFlags::subscribe(),
+            Some(variable_header::VariableHeader::Subscribe(variable_header)),
+            Some(payload::Payload::Subscribe(payload)),
+        )
     }
 
     pub fn publish(flags: fixed_header::PublishFlags, variable_header: variable_header::publish::Publish<'a>, payload: &'a [u8]) -> Result<Self, EncodeError> {
         // TODO encode this using type states
         assert!(flags.qos().expect("valid qos") == qos::QoS::AtMostOnce || variable_header.packet_identifier().is_some());
 
-        let len = u32::try_from(variable_header.encoded_len() + payload.len())?;
-        Ok(Self {
-            fixed_header: FixedHeader::new(
-                fixed_header::PacketType::Publish,
-                flags.into(),
-                len,
-            ),
-            variable_header: Some(variable_header::VariableHeader::Publish(variable_header)),
-            payload: Some(payload::Payload::Bytes(payload)),
-        })
+        Self::packet(
+            fixed_header::PacketType::Publish,
+            flags.into(),
+            Some(variable_header::VariableHeader::Publish(variable_header)),
+            Some(payload::Payload::Bytes(payload))
+        )
     }
 
     pub fn pingreq() -> Self {
@@ -87,6 +75,23 @@ impl<'a> Packet<'a> {
             variable_header: None,
             payload: None,
         }
+    }
+
+    fn packet(r#type: fixed_header::PacketType, flags: fixed_header::PacketFlags, variable_header: Option<VariableHeader<'a>>, payload: Option<Payload<'a>>) -> Result<Self, EncodeError> {
+        let len = u32::try_from(
+            variable_header.as_ref().map(VariableHeader::encoded_len).unwrap_or(0) +
+            payload.as_ref().map(Payload::encoded_len).unwrap_or(0)
+        )?;
+
+        Ok(Self {
+            fixed_header: FixedHeader::new(
+                r#type,
+                flags,
+                len,
+            ),
+            variable_header: variable_header,
+            payload: payload,
+        })
     }
 
     pub fn fixed_header(&self) -> &FixedHeader {
