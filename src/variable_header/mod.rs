@@ -43,6 +43,7 @@ impl<'a> VariableHeader<'a> {
     decode!(connack,   connack::Connack::decode,                    Connack);
     decode!(subscribe, packet_identifier::PacketIdentifier::decode, Subscribe);
     decode!(suback,    packet_identifier::PacketIdentifier::decode, Suback);
+    decode!(publish,   publish::Publish::decode,                    Publish);
     decode!(puback,    packet_identifier::PacketIdentifier::decode, Puback);
 
     pub fn decode(r#type: PacketType, flags: PacketFlags, bytes: &'a [u8]) -> Option<Result<Status<(usize, Self)>, DecodeError>> {
@@ -51,15 +52,7 @@ impl<'a> VariableHeader<'a> {
             PacketType::Connack   => Some(Self::connack(flags, bytes)),
             PacketType::Subscribe => Some(Self::subscribe(flags, bytes)),
             PacketType::Suback    => Some(Self::suback(flags, bytes)),
-            PacketType::Publish   => {
-                match publish::Publish::decode(flags, bytes) {
-                    Ok(Status::Partial(n)) => return Some(Ok(Status::Partial(n))),
-                    Err(e) => return Some(Err(e)),
-                    Ok(Status::Complete((offset, var_header))) => {
-                        return Some(Ok(Status::Complete((offset, VariableHeader::Publish(var_header)))))
-                    },
-                };
-            },
+            PacketType::Publish   => Some(Self::publish(flags, bytes)),
             PacketType::Puback    => Some(Self::puback(flags, bytes)),
             _ => None,
         }
