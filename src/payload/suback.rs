@@ -25,7 +25,7 @@ impl ReturnCode {
 	pub const SUCCESS_QOS_0: ReturnCode = ReturnCode(0b0000_0000);
 	pub const SUCCESS_QOS_1: ReturnCode = ReturnCode(0b0000_0001);
 	pub const SUCCESS_QOS_2: ReturnCode = ReturnCode(0b0000_0010);
-	pub const FAILURE: ReturnCode       = ReturnCode(0b1000_0000);
+	pub const FAILURE      : ReturnCode = ReturnCode(0b1000_0000);
 
     bitfield_fields! {
         bool;
