@@ -1,4 +1,5 @@
 use core::{
+	fmt,
 	result::Result,
 	iter::Iterator,
 	convert::{From, TryFrom},
@@ -56,7 +57,6 @@ impl<'a> Iterator for Iter<'a> {
 	}
 }
 
-#[derive(Debug)]
 pub enum Subscribe<'a> {
 	Encode(&'a [(&'a str, qos::QoS)]),
 	Decode(&'a [u8]),
@@ -69,6 +69,20 @@ impl<'a> Subscribe<'a> {
 
 	pub fn topics(&self) -> Iter {
 		Iter::new(self)
+	}
+}
+
+impl<'a> fmt::Debug for Subscribe<'a> {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(f, "Subscribe {{")?;
+		self.topics()
+			.fold(Ok(()), |acc, (topic, qos)| {
+				acc?;
+				write!(f, "Topic {:#?}, QoS {:#?}", topic, qos)
+			})?;
+		write!(f, "}}")?;
+
+		Ok(())
 	}
 }
 
