@@ -10,12 +10,14 @@ use crate::{
 
 pub mod connect;
 pub mod subscribe;
+pub mod suback;
 
 #[derive(Debug)]
 pub enum Payload<'a> {
 	Bytes(&'a [u8]),
 	Connect(connect::Connect<'a>),
 	Subscribe(subscribe::Subscribe<'a>),
+	Suback(suback::Suback<'a>),
 }
 
 impl<'a> Encodable for Payload<'a> {
@@ -24,6 +26,7 @@ impl<'a> Encodable for Payload<'a> {
 			&Payload::Bytes(ref c)     => c.len(),
 			&Payload::Connect(ref c)   => c.encoded_len(),
 			&Payload::Subscribe(ref c) => c.encoded_len(),
+			&Payload::Suback(ref c)    => c.encoded_len(),
 		}
 	}
 
@@ -40,6 +43,7 @@ impl<'a> Encodable for Payload<'a> {
 			},
 			&Payload::Connect(ref c)   => c.encode(bytes),
 			&Payload::Subscribe(ref c) => c.encode(bytes),
+			&Payload::Suback(ref c)    => c.encode(bytes),
 		}
 	}
 }
