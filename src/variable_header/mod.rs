@@ -61,7 +61,7 @@ impl<'a> VariableHeader<'a> {
 }
 
 macro_rules! encode {
-    ($($enum:ident),+) => (
+    ($($enum:ident;)+) => (
         fn encoded_len(&self) -> usize {
             match self {
                 $( &VariableHeader::$enum(ref c) => c.encoded_len(), )+
@@ -78,11 +78,11 @@ macro_rules! encode {
 
 impl<'buf> Encodable for VariableHeader<'buf> {
     encode!(
-        Connect,
-        Connack,
-        Subscribe,
-        Suback,
-        Publish,
-        Puback
+        Connect;
+        Connack;
+        Subscribe;
+        Suback;
+        Publish;
+        Puback;
     );
 }
