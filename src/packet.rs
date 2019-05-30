@@ -143,36 +143,36 @@ impl<'a> Decodable<'a> for Packet<'a> {
 
         // TODO this is only duplicated while not all types have their
         // variable header parsed.
-        let (variable_header, payload) = if let Some(result) = VariableHeader::decode(fixed_header.r#type(), fixed_header.flags(), &bytes[fixed_header_offset..]) {
+        let (variable_header_consumed, variable_header) = if let Some(result) = VariableHeader::decode(fixed_header.r#type(), fixed_header.flags(), &bytes[fixed_header_offset..]) {
             let (variable_header_offset, variable_header) = match result {
                 Err(e) => return Err(e),
                 Ok(Status::Partial(p)) => return Ok(Status::Partial(p)),
                 Ok(Status::Complete(x)) => x,
             };
-            let variable_header_consumed = variable_header_offset;
-
-            let payload_len = fixed_header.len() as usize - variable_header_consumed;
-
-            let available = bytes.len() - (fixed_header_offset + variable_header_offset);
-            let needed = payload_len - min(available, payload_len);
-            if needed > 0 {
-                return Ok(Status::Partial(needed));
-            }
-            let payload = &bytes[fixed_header_offset+variable_header_offset..fixed_header_offset+variable_header_offset+payload_len];
-
-            (Some(variable_header), payload)
+            (variable_header_offset - fixed_header_offset, Some(variable_header))
         } else {
-            let available = bytes.len() - fixed_header_offset;
-            let needed = fixed_header.len() as usize - min(available, fixed_header.len() as usize);
-            if needed > 0 {
-                return Ok(Status::Partial(needed));
-            }
-            let payload = &bytes[fixed_header_offset..fixed_header_offset+fixed_header.len() as usize];
-
-            (None, payload)
+            (0, None)
         };
 
-        let payload = payload::Payload::Bytes(payload);
+        let payload_len = fixed_header.len() as usize - variable_header_consumed;
+
+        let available = bytes.len() - (fixed_header_offset + variable_header_consumed);
+        let needed = payload_len - min(available, payload_len);
+        if needed > 0 {
+            return Ok(Status::Partial(needed));
+        }
+
+        let payload_bytes = &bytes[fixed_header_offset+variable_header_consumed..fixed_header_offset+variable_header_consumed+payload_len];
+
+        let payload = if let Some(result) = Payload::decode(fixed_header.r#type(), payload_bytes) {
+            match result {
+                Err(e) => return Err(e),
+                Ok(Status::Partial(n)) => return Ok(Status::Partial(n)),
+                Ok(Status::Complete((_, payload))) => payload,
+            }
+        } else {
+            payload::Payload::Bytes(payload_bytes)
+        };
 
         Ok(Status::Complete((fixed_header_offset + fixed_header.len() as usize, Self {
             fixed_header,
