@@ -14,9 +14,19 @@ pub struct PacketFlags(pub u8);
 #[allow(dead_code)]
 impl PacketFlags {
     pub const CONNECT: PacketFlags = PacketFlags(0b0000);
+    pub const CONNACK: PacketFlags = PacketFlags(0b0000);
+    // publish is special
+    pub const PUBACK: PacketFlags = PacketFlags(0b0000);
+    pub const PUBREC: PacketFlags = PacketFlags(0b0000);
+    pub const PUBREL: PacketFlags = PacketFlags(0b0010);
+    pub const PUBCOMP: PacketFlags = PacketFlags(0b0000);
+    pub const SUBSCRIBE: PacketFlags = PacketFlags(0b0010);
+    pub const SUBACK: PacketFlags = PacketFlags(0b0000);
+    pub const UNSUBSCRIBE: PacketFlags = PacketFlags(0b0010);
+    pub const UNSUBACK: PacketFlags = PacketFlags(0b0000);
     pub const PINGREQ: PacketFlags = PacketFlags(0b0000);
     pub const PINGRESP: PacketFlags = PacketFlags(0b0000);
-    pub const SUBSCRIBE: PacketFlags = PacketFlags(0b0010);
+    pub const DISCONNECT: PacketFlags = PacketFlags(0b0000);
 }
 
 impl From<PublishFlags> for PacketFlags {
