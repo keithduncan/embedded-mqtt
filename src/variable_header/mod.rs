@@ -30,33 +30,34 @@ pub trait HeaderDecode<'a>
 pub type PacketId = u16;
 
 macro_rules! decode {
-    ($fn:ident, $parser:path, $name:ident) => (
-        fn $fn(flags: PacketFlags, bytes: &'a [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
-            let (offset, var_header) = complete!($parser(flags, bytes));
-            Ok(Status::Complete((offset, VariableHeader::$name(var_header))))
+    ($($name:ident, $parser:path;)+) => (
+        pub fn decode(r#type: PacketType, flags: PacketFlags, bytes: &'a [u8]) -> Option<Result<Status<(usize, Self)>, DecodeError>> {
+            Some(match r#type {
+                $(
+                    PacketType::$name => $parser(flags, bytes).map(|s| {
+                        match s {
+                            Status::Complete((offset, var_header)) => {
+                                Status::Complete((offset, VariableHeader::$name(var_header)))
+                            },
+                            Status::Partial(n) => Status::Partial(n),
+                        }
+                    }),
+                )+
+                _ => return None,
+            })
         }
     )
 }
 
 impl<'a> VariableHeader<'a> {
-    decode!(connect,   connect::Connect::decode,                    Connect);
-    decode!(connack,   connack::Connack::decode,                    Connack);
-    decode!(subscribe, packet_identifier::PacketIdentifier::decode, Subscribe);
-    decode!(suback,    packet_identifier::PacketIdentifier::decode, Suback);
-    decode!(publish,   publish::Publish::decode,                    Publish);
-    decode!(puback,    packet_identifier::PacketIdentifier::decode, Puback);
-
-    pub fn decode(r#type: PacketType, flags: PacketFlags, bytes: &'a [u8]) -> Option<Result<Status<(usize, Self)>, DecodeError>> {
-        match r#type {
-            PacketType::Connect   => Some(Self::connect(flags, bytes)),
-            PacketType::Connack   => Some(Self::connack(flags, bytes)),
-            PacketType::Subscribe => Some(Self::subscribe(flags, bytes)),
-            PacketType::Suback    => Some(Self::suback(flags, bytes)),
-            PacketType::Publish   => Some(Self::publish(flags, bytes)),
-            PacketType::Puback    => Some(Self::puback(flags, bytes)),
-            _ => None,
-        }
-    }
+    decode!(
+        Connect,   connect::Connect::decode;
+        Connack,   connack::Connack::decode;
+        Subscribe, packet_identifier::PacketIdentifier::decode;
+        Suback,    packet_identifier::PacketIdentifier::decode;
+        Publish,   publish::Publish::decode;
+        Puback,    packet_identifier::PacketIdentifier::decode;
+    );
 }
 
 macro_rules! encode {
