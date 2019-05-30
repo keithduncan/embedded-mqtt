@@ -4,8 +4,10 @@ use core::{
 };
 
 use crate::{
+	fixed_header::PacketType,
 	codec::Encodable,
-	error::EncodeError,
+	error::{DecodeError, EncodeError},
+	status::Status,
 };
 
 pub mod connect;
@@ -18,6 +20,14 @@ pub enum Payload<'a> {
 	Connect(connect::Connect<'a>),
 	Subscribe(subscribe::Subscribe<'a>),
 	Suback(suback::Suback<'a>),
+}
+
+impl<'a> Payload<'a> {
+	pub fn decode(r#type: PacketType, _bytes: &'a [u8]) -> Option<Result<Status<(usize, Self)>, DecodeError>> {
+		match r#type {
+			_ => None,
+		}
+	}
 }
 
 impl<'a> Encodable for Payload<'a> {
