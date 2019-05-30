@@ -1,109 +1,21 @@
-use core::{
-    result::Result,
-    convert::{From, TryFrom, TryInto},
-    fmt::Debug,
-};
+use core::result::Result;
 
 use crate::{
     codec::{self, Decodable, Encodable},
     error::{DecodeError, EncodeError},
     status::Status,
-    qos,
 };
 
-use bitfield::BitRange;
+mod packet_type;
+mod packet_flags;
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
-pub enum PacketType {
-    Connect,
-    Connack,
-    Publish,
-    Puback,
-    Pubrec,
-    Pubrel,
-    Pubcomp,
-    Subscribe,
-    Suback,
-    Unsubscribe,
-    Unsuback,
-    Pingreq,
-    Pingresp,
-    Disconnect,
-}
-
-#[derive(PartialEq, Eq, Debug, Clone, Copy)]
-pub struct PacketFlags(u8);
-
-impl PacketFlags {
-    #[inline]
-    pub fn connect() -> Self {
-        Self(0b0000)
-    }
-
-    #[inline]
-    pub fn subscribe() -> Self {
-        Self(0b0010)
-    }
-
-    #[inline]
-    pub fn pingreq() -> Self {
-        Self(0b0000)
-    }
-
-    #[inline]
-    pub fn pingresp() -> Self {
-        Self(0b0000)
-    }
-}
-
-impl From<PublishFlags> for PacketFlags {
-    fn from(flags: PublishFlags) -> Self {
-        PacketFlags(flags.0)
-    }
-}
-
-#[derive(PartialEq, Eq, Clone, Copy, Default)]
-pub struct PublishFlags(u8);
-
-bitfield_bitrange! {
-    struct PublishFlags(u8)
-}
-
-impl PublishFlags {
-    bitfield_fields! {
-        bool;
-        pub dup,    set_dup    : 3;
-        pub retain, set_retain : 0;
-    }
-
-    pub fn qos(&self) -> Result<qos::QoS, qos::Error> {
-        let qos_bits: u8 = self.bit_range(2, 1);
-        qos_bits.try_into()
-    }
-
-    #[allow(dead_code)]
-    pub fn set_qos(&mut self, qos: qos::QoS) {
-        self.set_bit_range(2, 1, u8::from(qos))
-    }
-}
-
-impl Debug for PublishFlags {
-    bitfield_debug! {
-        struct PublishFlags;
-        pub dup, _                : 3;
-        pub into qos::QoS, qos, _ : 2, 1;
-        pub retain, _             : 0;
-    }
-}
-
-impl TryFrom<PacketFlags> for PublishFlags {
-    type Error = qos::Error;
-    fn try_from(flags: PacketFlags) -> Result<Self, Self::Error> {
-        let flags = PublishFlags(flags.0);
-        flags.qos()?;
-        Ok(flags)
-    }
-}
+pub use self::{
+    packet_type::PacketType,
+    packet_flags::{
+        PacketFlags,
+        PublishFlags,
+    },
+};
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct FixedHeader {
