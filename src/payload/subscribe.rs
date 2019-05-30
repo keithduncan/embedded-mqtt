@@ -90,12 +90,12 @@ fn parse_subscription<'a>(bytes: &'a [u8]) -> Result<Status<(usize, (&'a str, qo
 	let offset = 0;
 
 	let (offset, topic) = {
-		let (o, topic) = read!(codec::string::parse_string, bytes, offset);
+		let (o, topic) = complete!(codec::string::parse_string(&bytes[offset..]));
 		(offset + o, topic)
 	};
 
 	let (offset, qos) = {
-		let (o, qos) = read!(codec::values::parse_u8, bytes, offset);
+		let (o, qos) = complete!(codec::values::parse_u8(&bytes[offset..]));
 		let qos = qos::QoS::try_from(qos)?;
 		(offset + o, qos)
 	};
@@ -107,7 +107,11 @@ impl<'a> Decodable<'a> for Subscribe<'a> {
 	fn decode(bytes: &'a [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
 		let mut offset = 0;
 		while offset < bytes.len() {
-			let (o, _) = read!(parse_subscription, bytes, offset);
+			let o = match parse_subscription(&bytes[offset..]) {
+				Err(e) => return Err(e),
+				Ok(Status::Partial(..)) => return Err(DecodeError::InvalidLength),
+				Ok(Status::Complete((o, _))) => o,
+			};
 			offset += o;
 		}
 
@@ -138,5 +142,98 @@ impl<'a> Encodable for Subscribe<'a> {
 				};
 				Ok(offset)
 			})
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn decode_literal() {
+		let topics = [
+			("a", qos::QoS::AtMostOnce),
+			("b", qos::QoS::AtLeastOnce),
+			("c", qos::QoS::ExactlyOnce),
+		];
+
+		let sub = Subscribe::new(&topics);
+
+		let mut iter = sub.topics();
+
+		let next = iter.next();
+		assert_eq!(next, Some(("a", qos::QoS::AtMostOnce)));
+
+		let next = iter.next();
+		assert_eq!(next, Some(("b", qos::QoS::AtLeastOnce)));
+
+		let next = iter.next();
+		assert_eq!(next, Some(("c", qos::QoS::ExactlyOnce)));
+
+		let next = iter.next();
+		assert_eq!(next, None);
+	}
+
+	#[test]
+	fn decode_bytes() {
+		let bytes = [
+			0b0000_0000, // 1
+			0b0000_0001,
+			0x61,        // 'a'
+			0x0000_0000, // AtMostOnce
+
+			0b0000_0000, // 1
+			0b0000_0001,
+			0x62,        // 'b'
+			0b0000_0001, // AtLeastOnce
+
+			0b0000_0000, // 1
+			0b0000_0001,
+			0x63,        // 'c'
+			0b0000_0010, // ExactlyOnce
+		];
+
+		let (_, sub) = Subscribe::decode(&bytes).expect("valid").unwrap();
+
+		let mut iter = sub.topics();
+
+		let next = iter.next();
+		assert_eq!(next, Some(("a", qos::QoS::AtMostOnce)));
+
+		let next = iter.next();
+		assert_eq!(next, Some(("b", qos::QoS::AtLeastOnce)));
+
+		let next = iter.next();
+		assert_eq!(next, Some(("c", qos::QoS::ExactlyOnce)));
+
+		let next = iter.next();
+		assert_eq!(next, None);
+	}
+
+	#[test]
+	fn decode_bytes_error() {
+		let bytes = [
+			0b0000_0000, // 1
+			0b0000_0001,
+			0x61,        // 'a'
+			0x0000_0000, // AtMostOnce
+
+			0b0000_0000, // 1
+			0b0000_0001,
+			0x62,        // 'b'
+			0b0000_0001, // AtLeastOnce
+
+			0b0000_0000, // 1
+			0b0000_0001,
+			0x63,        // 'c'
+
+			// Intentionally omitted
+			//0b0000_0010, // ExactlyOnce
+			//
+		];
+
+		let sub = Subscribe::decode(&bytes);
+		assert!(sub.is_err());
+		assert_eq!(sub.unwrap_err(), DecodeError::InvalidLength);
 	}
 }
