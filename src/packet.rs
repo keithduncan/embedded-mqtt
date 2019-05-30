@@ -1,4 +1,5 @@
 use core::{
+    default::Default,
     convert::TryFrom,
     cmp::min,
     result::Result,
@@ -19,7 +20,7 @@ use crate::{
 pub struct Packet<'a> {
     fixed_header: FixedHeader,
     variable_header: Option<VariableHeader<'a>>,
-    payload: Option<Payload<'a>>,
+    payload: Payload<'a>,
 }
 
 /// A full MQTT packet with fixed header, variable header and payload.
@@ -32,7 +33,7 @@ impl<'a> Packet<'a> {
             fixed_header::PacketType::Connect,
             fixed_header::PacketFlags::CONNECT,
             Some(variable_header::VariableHeader::Connect(variable_header)),
-            Some(payload::Payload::Connect(payload))
+            payload::Payload::Connect(payload)
         )
     }
 
@@ -42,7 +43,7 @@ impl<'a> Packet<'a> {
             fixed_header::PacketType::Subscribe,
             fixed_header::PacketFlags::SUBSCRIBE,
             Some(variable_header::VariableHeader::Subscribe(variable_header)),
-            Some(payload::Payload::Subscribe(payload)),
+            payload::Payload::Subscribe(payload)
         )
     }
 
@@ -55,7 +56,7 @@ impl<'a> Packet<'a> {
             fixed_header::PacketType::Publish,
             flags.into(),
             Some(variable_header::VariableHeader::Publish(variable_header)),
-            Some(payload::Payload::Bytes(payload))
+            payload::Payload::Bytes(payload)
         )
     }
 
@@ -68,7 +69,7 @@ impl<'a> Packet<'a> {
                 0,
             ),
             variable_header: None,
-            payload: None,
+            payload: Default::default(),
         }
     }
 
@@ -81,7 +82,7 @@ impl<'a> Packet<'a> {
                 0,
             ),
             variable_header: None,
-            payload: None,
+            payload: Default::default(),
         }
     }
 
@@ -89,10 +90,10 @@ impl<'a> Packet<'a> {
     ///
     /// Constructs a fixed header with the appropriate `len` field for the given
     /// variable header and payload.
-    fn packet(r#type: fixed_header::PacketType, flags: fixed_header::PacketFlags, variable_header: Option<VariableHeader<'a>>, payload: Option<Payload<'a>>) -> Result<Self, EncodeError> {
+    fn packet(r#type: fixed_header::PacketType, flags: fixed_header::PacketFlags, variable_header: Option<VariableHeader<'a>>, payload: Payload<'a>) -> Result<Self, EncodeError> {
         let len = u32::try_from(
             variable_header.as_ref().map(VariableHeader::encoded_len).unwrap_or(0) +
-            payload.as_ref().map(Payload::encoded_len).unwrap_or(0)
+            payload.encoded_len()
         )?;
 
         Ok(Self {
@@ -119,7 +120,7 @@ impl<'a> Packet<'a> {
     }
 
     /// Return a reference to the payload of the packet.
-    pub fn payload(&self) -> &Option<Payload> {
+    pub fn payload(&self) -> &Payload {
         &self.payload
     }
 }
@@ -171,7 +172,7 @@ impl<'a> Decodable<'a> for Packet<'a> {
             (None, payload)
         };
 
-        let payload = Some(payload::Payload::Bytes(payload));
+        let payload = payload::Payload::Bytes(payload);
 
         Ok(Status::Complete((fixed_header_offset + fixed_header.len() as usize, Self {
             fixed_header,
@@ -210,11 +211,9 @@ impl<'a> Encodable for Packet<'a> {
             };
         }
 
-        let offset = if let Some(ref payload) = self.payload {
-            let o = payload.encode(&mut bytes[offset..])?;
+        let offset = {
+            let o = self.payload.encode(&mut bytes[offset..])?;
             offset + o
-        } else {
-            offset
         };
 
         Ok(offset)
@@ -248,6 +247,6 @@ mod tests {
         assert_eq!(2, publish.fixed_header().encoded_len());
         assert_eq!(9, publish.fixed_header().len());
         assert_eq!(7, publish.variable_header().as_ref().expect("variable header").encoded_len());
-        assert_eq!(2, publish.payload().as_ref().expect("payload").encoded_len());
+        assert_eq!(2, publish.payload().encoded_len());
     }
 }

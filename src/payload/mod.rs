@@ -1,4 +1,7 @@
-use core::result::Result;
+use core::{
+	result::Result,
+	default::Default,
+};
 
 use crate::{
 	codec::Encodable,
@@ -38,5 +41,11 @@ impl<'a> Encodable for Payload<'a> {
 			&Payload::Connect(ref c)   => c.encode(bytes),
 			&Payload::Subscribe(ref c) => c.encode(bytes),
 		}
+	}
+}
+
+impl<'a> Default for Payload<'a> {
+	fn default() -> Self {
+		Payload::Bytes(&[])
 	}
 }
