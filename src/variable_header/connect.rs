@@ -256,7 +256,7 @@ mod tests {
             0b00001010, // 
         ];
 
-        let connect = Connect::decode(&buf);
+        let connect = Connect::decode(PacketFlags::CONNECT, &buf);
 
         assert_eq!(connect, Ok(Status::Complete((10, Connect {
             name: "MQTT",
