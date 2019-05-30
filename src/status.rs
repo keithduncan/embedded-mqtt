@@ -7,7 +7,7 @@
 pub enum Status<T> {
     /// The completed result.
     Complete(T),
-    /// A partial result.
+    /// A partial result and how much is needed to continue parsing.
     Partial(usize),
 }
 
