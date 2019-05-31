@@ -250,4 +250,23 @@ mod tests {
         assert_eq!(7, publish.variable_header().as_ref().expect("variable header").encoded_len());
         assert_eq!(2, publish.payload().encoded_len());
     }
+
+    #[test]
+    fn encode_subscribe() {
+        let subscribe_id = 1;
+        let sub = Packet::subscribe(
+            variable_header::packet_identifier::PacketIdentifier::new(subscribe_id),
+            payload::subscribe::Subscribe::new(&[
+                ("c/a", qos::QoS::AtMostOnce),
+                ("c/b", qos::QoS::AtLeastOnce),
+                ("c/c", qos::QoS::ExactlyOnce),
+            ]),
+        ).expect("valid packet");
+
+        assert_eq!(22, sub.encoded_len());
+        assert_eq!(2, sub.fixed_header().encoded_len());
+        assert_eq!(20, sub.fixed_header().len());
+        assert_eq!(2, sub.variable_header().as_ref().expect("variable header").encoded_len());
+        assert_eq!(18, sub.payload().encoded_len());
+    }
 }
