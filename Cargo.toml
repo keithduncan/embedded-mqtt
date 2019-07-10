@@ -2,6 +2,7 @@
 name = "mqtt-codec"
 version = "0.1.0"
 authors = ["Keith Duncan <keith_duncan@me.com>"]
+publish = false
 
 [features]
 std = ["byteorder/std"]
