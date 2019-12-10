@@ -44,7 +44,7 @@ impl<T> Status<T> {
 #[macro_export]
 macro_rules! complete {
     ($e:expr) => {
-        match try!($e) {
+        match $e? {
             Status::Complete(v) => v,
             Status::Partial(x) => return Ok(Status::Partial(x)),
         }
@@ -53,7 +53,7 @@ macro_rules! complete {
 
 macro_rules! read {
     ($fn:path, $bytes:expr, $offset:expr) => {
-        match try!($fn(&$bytes[$offset..])) {
+        match $fn(&$bytes[$offset..])? {
             Status::Complete(v) => ($offset + v.0, v.1),
             Status::Partial(x) => return Ok(Status::Partial(x)),
         }
