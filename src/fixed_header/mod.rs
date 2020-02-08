@@ -296,7 +296,7 @@ mod tests {
     #[test]
     fn publish_flags() {
         for i in 0..15 {
-            let mut input = 03 << 4 | i;
+            let input = 03 << 4 | i;
             let (packet_type, flag) = parse_packet_type(input).unwrap();
             assert_eq!(packet_type, PacketType::Publish);
             assert_eq!(flag, PacketFlags(i));
