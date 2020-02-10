@@ -1,5 +1,9 @@
-# mqttparse
+# mqtt-codec
 
-A parser for the MQTT 3.1.1 protocol in Rust.
+An encoder/decoder for the MQTT 3.1.1 protocol in pure Rust.
 
-Works with `no_std` by disabling the `std` Cargo feature.
+`no_std` by default, a `std` feature enables extensions.
+
+Originally forked from https://github.com/avranju/mqttparse and
+renamed when I added encode support, the original license and
+copyright is preserved in [LICENSE](LICENSE).
