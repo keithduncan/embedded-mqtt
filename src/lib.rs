@@ -1,7 +1,5 @@
 #![no_std]
 
-#![deny(warnings)]
-
 #[cfg(any(feature = "std", test))]
 #[macro_use]
 extern crate std;
