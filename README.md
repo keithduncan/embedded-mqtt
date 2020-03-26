@@ -1,4 +1,4 @@
-# mqtt-codec
+# embedded-mqtt
 
 An encoder/decoder for the MQTT 3.1.1 protocol in pure Rust.
 
