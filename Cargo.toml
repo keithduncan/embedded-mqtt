@@ -1,7 +1,12 @@
 [package]
 name = "embedded-mqtt"
+description = "no_std encoder/decoder for MQTT 3.1.1 protocol packets for embedded devices."
 version = "0.1.0"
 authors = ["Keith Duncan <keith_duncan@me.com>"]
+repository = "https://github.com/keithduncan/embedded-mqtt"
+license = "MIT"
+keywords = ["mqtt"]
+categories = ["embedded", "network-programming", "no_std"]
 
 [features]
 std = ["byteorder/std"]
