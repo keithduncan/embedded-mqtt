@@ -27,7 +27,7 @@ impl<'a> Iterator for Iter<'a> {
     type Item = (&'a str, qos::QoS);
     fn next(&mut self) -> Option<Self::Item> {
         match self.sub {
-            &Subscribe::Encode(topics) => {
+            Subscribe::Encode(topics) => {
                 // Offset is an index into the encode slice
                 if self.offset >= topics.len() {
                     return None;
@@ -38,7 +38,7 @@ impl<'a> Iterator for Iter<'a> {
 
                 Some(item)
             }
-            &Subscribe::Decode(bytes) => {
+            Subscribe::Decode(bytes) => {
                 // Offset is a byte offset in the byte slice
                 if self.offset >= bytes.len() {
                     return None;
@@ -73,12 +73,12 @@ impl<'a> Subscribe<'a> {
 
 impl<'a> fmt::Debug for Subscribe<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Subscribe {{\n")?;
+        writeln!(f, "Subscribe {{")?;
         self.topics().fold(Ok(()), |acc, (topic, qos)| {
             acc?;
-            write!(
+            writeln!(
                 f,
-                "    (\n        Topic: {:#?},\n        QoS: {:#?}\n    )\n",
+                "    (\n        Topic: {:#?},\n        QoS: {:#?}\n    )",
                 topic, qos
             )
         })?;

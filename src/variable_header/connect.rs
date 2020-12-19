@@ -113,7 +113,7 @@ impl<'buf> Connect<'buf> {
     pub fn new(protocol: Protocol, level: Level, flags: Flags, keep_alive: u16) -> Self {
         let name = protocol.name();
         Connect {
-            name: name,
+            name,
             level,
             flags,
             keep_alive,

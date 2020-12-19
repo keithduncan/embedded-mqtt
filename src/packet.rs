@@ -125,8 +125,8 @@ impl<'a> Packet<'a> {
 
         Ok(Self {
             fixed_header: FixedHeader::new(r#type, flags, len),
-            variable_header: variable_header,
-            payload: payload,
+            variable_header,
+            payload,
         })
     }
 

@@ -51,7 +51,7 @@ impl Encodable for Flags {
     }
 
     fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
-        if bytes.len() < 1 {
+        if bytes.is_empty() {
             return Err(EncodeError::OutOfSpace);
         }
 
@@ -92,17 +92,17 @@ impl Encodable for ReturnCode {
     }
 
     fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
-        if bytes.len() < 1 {
+        if bytes.is_empty() {
             return Err(EncodeError::OutOfSpace);
         }
 
         let val = match self {
-            &ReturnCode::Accepted => 0,
-            &ReturnCode::RefusedProtocolVersion => 1,
-            &ReturnCode::RefusedClientIdentifier => 2,
-            &ReturnCode::RefusedServerUnavailable => 3,
-            &ReturnCode::RefusedUsernameOrPassword => 4,
-            &ReturnCode::RefusedNotAuthorized => 5,
+            ReturnCode::Accepted => 0,
+            ReturnCode::RefusedProtocolVersion => 1,
+            ReturnCode::RefusedClientIdentifier => 2,
+            ReturnCode::RefusedServerUnavailable => 3,
+            ReturnCode::RefusedUsernameOrPassword => 4,
+            ReturnCode::RefusedNotAuthorized => 5,
         };
 
         bytes[0] = val;

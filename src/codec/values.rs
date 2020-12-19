@@ -10,7 +10,7 @@ use super::{Decodable, Encodable};
 use byteorder::{BigEndian, ByteOrder};
 
 pub fn parse_u8(bytes: &[u8]) -> Result<Status<(usize, u8)>, DecodeError> {
-    if bytes.len() < 1 {
+    if bytes.is_empty() {
         return Ok(Status::Partial(1));
     }
 
@@ -18,7 +18,7 @@ pub fn parse_u8(bytes: &[u8]) -> Result<Status<(usize, u8)>, DecodeError> {
 }
 
 pub fn encode_u8(value: u8, bytes: &mut [u8]) -> Result<usize, EncodeError> {
-    if bytes.len() < 1 {
+    if bytes.is_empty() {
         return Err(EncodeError::OutOfSpace);
     }
 

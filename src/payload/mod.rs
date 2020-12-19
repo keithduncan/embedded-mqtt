@@ -49,19 +49,19 @@ impl<'a> Payload<'a> {
 impl<'a> Encodable for Payload<'a> {
     fn encoded_len(&self) -> usize {
         match self {
-            &Payload::Connect(ref c) => c.encoded_len(),
-            &Payload::Subscribe(ref c) => c.encoded_len(),
-            &Payload::Suback(ref c) => c.encoded_len(),
-            &Payload::Bytes(ref c) => c.len(),
+            Payload::Connect(ref c) => c.encoded_len(),
+            Payload::Subscribe(ref c) => c.encoded_len(),
+            Payload::Suback(ref c) => c.encoded_len(),
+            Payload::Bytes(ref c) => c.len(),
         }
     }
 
     fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
         match self {
-            &Payload::Connect(ref c) => c.encode(bytes),
-            &Payload::Subscribe(ref c) => c.encode(bytes),
-            &Payload::Suback(ref c) => c.encode(bytes),
-            &Payload::Bytes(ref c) => {
+            Payload::Connect(ref c) => c.encode(bytes),
+            Payload::Subscribe(ref c) => c.encode(bytes),
+            Payload::Suback(ref c) => c.encode(bytes),
+            Payload::Bytes(ref c) => {
                 if bytes.len() < c.len() {
                     return Err(EncodeError::OutOfSpace);
                 }

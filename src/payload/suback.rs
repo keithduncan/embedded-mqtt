@@ -1,7 +1,6 @@
 use core::{
     convert::{From, TryFrom, TryInto},
     fmt::Debug,
-    mem,
     result::Result,
 };
 
@@ -97,7 +96,7 @@ impl<'a> Decodable<'a> for Suback<'a> {
             })
             .map_err(|_| DecodeError::InvalidSubackReturnCode)?;
 
-        let return_codes = unsafe { mem::transmute::<&[u8], &[ReturnCode]>(bytes) };
+        let return_codes = unsafe { &*(bytes as *const [u8] as *const [ReturnCode]) };
 
         Ok(Status::Complete((bytes.len(), Self { return_codes })))
     }
@@ -114,7 +113,7 @@ impl<'a> Encodable for Suback<'a> {
         }
 
         let return_code_bytes =
-            unsafe { mem::transmute::<&[ReturnCode], &[u8]>(self.return_codes) };
+            unsafe { &*(self.return_codes as *const [ReturnCode] as *const [u8]) };
 
         (&mut bytes[..self.return_codes.len()]).copy_from_slice(return_code_bytes);
 

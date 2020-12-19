@@ -37,6 +37,10 @@ impl FixedHeader {
     pub fn len(&self) -> u32 {
         self.len
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
 }
 
 impl<'buf> Decodable<'buf> for FixedHeader {
@@ -115,7 +119,7 @@ fn encode_remaining_length(mut len: u32, buf: &mut [u8; 4]) -> usize {
             byte |= 128;
         }
         buf[index] = byte;
-        index = index + 1;
+        index += 1;
 
         if len == 0 {
             break index;
@@ -204,10 +208,8 @@ fn validate_flag_val(
     types: &[PacketType],
     expected_flags: PacketFlags,
 ) -> Result<(PacketType, PacketFlags), DecodeError> {
-    if let Some(_) = types.iter().find(|&&v| v == packet_type) {
-        if flags != expected_flags {
-            return Err(DecodeError::PacketFlag);
-        }
+    if types.iter().any(|&v| v == packet_type) && flags != expected_flags {
+        return Err(DecodeError::PacketFlag);
     }
 
     Ok((packet_type, flags))
