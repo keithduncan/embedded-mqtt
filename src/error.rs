@@ -1,8 +1,4 @@
-use core::{
-    convert::From,
-    fmt,
-    str::Utf8Error,
-};
+use core::{convert::From, fmt, str::Utf8Error};
 
 use crate::qos;
 
@@ -87,7 +83,7 @@ impl EncodeError {
     fn desc(&self) -> &'static str {
         match *self {
             EncodeError::OutOfSpace => "not enough space in encode buffer",
-            EncodeError::ValueTooBig => "value too big to ever be encoded"
+            EncodeError::ValueTooBig => "value too big to ever be encoded",
         }
     }
 }

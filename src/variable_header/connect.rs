@@ -1,15 +1,15 @@
 use core::{
+    convert::{From, TryFrom, TryInto},
     fmt::Debug,
-    convert::{TryInto, TryFrom, From},
     result::Result,
 };
 
 use crate::{
-    fixed_header::PacketFlags,
     codec::{self, Encodable},
-    status::Status,
     error::{DecodeError, EncodeError},
+    fixed_header::PacketFlags,
     qos,
+    status::Status,
 };
 
 use super::HeaderDecode;
@@ -66,7 +66,7 @@ impl Flags {
         pub has_username,  set_has_username  : 7;
         pub has_password,  set_has_password  : 6;
         pub will_retain,   set_will_retain   : 5;
-        
+
         pub has_will,      set_has_will_flag : 2;
         pub clean_session, set_clean_session : 1;
     }
@@ -116,7 +116,7 @@ impl<'buf> Connect<'buf> {
             name: name,
             level,
             flags,
-            keep_alive
+            keep_alive,
         }
     }
 
@@ -138,7 +138,10 @@ impl<'buf> Connect<'buf> {
 }
 
 impl<'buf> HeaderDecode<'buf> for Connect<'buf> {
-    fn decode(_flags: PacketFlags, bytes: &'buf [u8]) -> Result<Status<(usize, Connect<'buf>)>, DecodeError> {
+    fn decode(
+        _flags: PacketFlags,
+        bytes: &'buf [u8],
+    ) -> Result<Status<(usize, Connect<'buf>)>, DecodeError> {
         let offset = 0;
 
         // read protocol name
@@ -147,9 +150,11 @@ impl<'buf> HeaderDecode<'buf> for Connect<'buf> {
         // read protocol revision
         let (offset, level) = read!(codec::values::parse_u8, bytes, offset);
 
-        let level = level.try_into().map_err(|_| DecodeError::InvalidProtocolLevel)?;
+        let level = level
+            .try_into()
+            .map_err(|_| DecodeError::InvalidProtocolLevel)?;
         if level != Level::Level3_1_1 {
-            return Err(DecodeError::InvalidProtocolLevel)
+            return Err(DecodeError::InvalidProtocolLevel);
         }
 
         // read protocol flags
@@ -166,12 +171,15 @@ impl<'buf> HeaderDecode<'buf> for Connect<'buf> {
         // read protocol keep alive
         let (offset, keep_alive) = read!(codec::values::parse_u16, bytes, offset);
 
-        Ok(Status::Complete((offset, Connect {
-            name,
-            level,
-            flags,
-            keep_alive,
-        })))
+        Ok(Status::Complete((
+            offset,
+            Connect {
+                name,
+                level,
+                flags,
+                keep_alive,
+            },
+        )))
     }
 }
 
@@ -239,30 +247,35 @@ mod tests {
     fn parse_connect() {
         let buf = [
             0b00000000, // Protocol Name Length
-            0b00000100,
-            0b01001101, // 'M'
+            0b00000100, 0b01001101, // 'M'
             0b01010001, // 'Q'
             0b01010100, // 'T'
             0b01010100, // 'T'
             0b00000100, // Level 4
             0b11001110, // Connect Flags - Username 1
-                        //               - Password 1
-                        //               - Will Retain 0
-                        //               - Will QoS 01
-                        //               - Will Flag 1
-                        //               - Clean Session 1
-                        //               - Reserved 0
+            //               - Password 1
+            //               - Will Retain 0
+            //               - Will QoS 01
+            //               - Will Flag 1
+            //               - Clean Session 1
+            //               - Reserved 0
             0b00000000, // Keep Alive (10s)
-            0b00001010, // 
+            0b00001010, //
         ];
 
         let connect = Connect::decode(PacketFlags::CONNECT, &buf);
 
-        assert_eq!(connect, Ok(Status::Complete((10, Connect {
-            name: "MQTT",
-            level: Level::Level3_1_1,
-            flags: Flags(0b11001110),
-            keep_alive: 10,
-        }))));
+        assert_eq!(
+            connect,
+            Ok(Status::Complete((
+                10,
+                Connect {
+                    name: "MQTT",
+                    level: Level::Level3_1_1,
+                    flags: Flags(0b11001110),
+                    keep_alive: 10,
+                }
+            )))
+        );
     }
 }

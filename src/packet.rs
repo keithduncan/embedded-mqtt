@@ -1,18 +1,13 @@
-use core::{
-    default::Default,
-    convert::TryFrom,
-    cmp::min,
-    result::Result,
-};
+use core::{cmp::min, convert::TryFrom, default::Default, result::Result};
 
 use crate::{
-    fixed_header::{self, FixedHeader},
-    variable_header::{self, VariableHeader},
-    payload::{self, Payload},
-    status::Status,
-    error::{DecodeError, EncodeError},
     codec::{Decodable, Encodable},
+    error::{DecodeError, EncodeError},
+    fixed_header::{self, FixedHeader},
+    payload::{self, Payload},
     qos,
+    status::Status,
+    variable_header::{self, VariableHeader},
 };
 
 #[derive(Debug)]
@@ -28,39 +23,54 @@ pub struct Packet<'a> {
 /// Variable header and payload are optional for some packet types.
 impl<'a> Packet<'a> {
     /// Create a CONNECT packet.
-    pub fn connect(variable_header: variable_header::connect::Connect<'a>, payload: payload::connect::Connect<'a>) -> Result<Self, EncodeError> {
+    pub fn connect(
+        variable_header: variable_header::connect::Connect<'a>,
+        payload: payload::connect::Connect<'a>,
+    ) -> Result<Self, EncodeError> {
         Self::packet(
             fixed_header::PacketType::Connect,
             fixed_header::PacketFlags::CONNECT,
             Some(variable_header::VariableHeader::Connect(variable_header)),
-            payload::Payload::Connect(payload)
+            payload::Payload::Connect(payload),
         )
     }
 
     /// Create a SUBSCRIBE packet.
-    pub fn subscribe(variable_header: variable_header::packet_identifier::PacketIdentifier, payload: payload::subscribe::Subscribe<'a>) -> Result<Self, EncodeError> {
+    pub fn subscribe(
+        variable_header: variable_header::packet_identifier::PacketIdentifier,
+        payload: payload::subscribe::Subscribe<'a>,
+    ) -> Result<Self, EncodeError> {
         Self::packet(
             fixed_header::PacketType::Subscribe,
             fixed_header::PacketFlags::SUBSCRIBE,
             Some(variable_header::VariableHeader::Subscribe(variable_header)),
-            payload::Payload::Subscribe(payload)
+            payload::Payload::Subscribe(payload),
         )
     }
 
     /// Create a PUBLISH packet.
-    pub fn publish(flags: fixed_header::PublishFlags, variable_header: variable_header::publish::Publish<'a>, payload: &'a [u8]) -> Result<Self, EncodeError> {
+    pub fn publish(
+        flags: fixed_header::PublishFlags,
+        variable_header: variable_header::publish::Publish<'a>,
+        payload: &'a [u8],
+    ) -> Result<Self, EncodeError> {
         // TODO encode this using type states
-        assert!(flags.qos().expect("valid qos") == qos::QoS::AtMostOnce || variable_header.packet_identifier().is_some());
+        assert!(
+            flags.qos().expect("valid qos") == qos::QoS::AtMostOnce
+                || variable_header.packet_identifier().is_some()
+        );
 
         Self::packet(
             fixed_header::PacketType::Publish,
             flags.into(),
             Some(variable_header::VariableHeader::Publish(variable_header)),
-            payload::Payload::Bytes(payload)
+            payload::Payload::Bytes(payload),
         )
     }
 
-    pub fn puback(variable_header: variable_header::packet_identifier::PacketIdentifier) -> Result<Self, EncodeError> {
+    pub fn puback(
+        variable_header: variable_header::packet_identifier::PacketIdentifier,
+    ) -> Result<Self, EncodeError> {
         Self::packet(
             fixed_header::PacketType::Puback,
             fixed_header::PacketFlags::PUBACK,
@@ -99,18 +109,22 @@ impl<'a> Packet<'a> {
     ///
     /// Constructs a fixed header with the appropriate `len` field for the given
     /// variable header and payload.
-    fn packet(r#type: fixed_header::PacketType, flags: fixed_header::PacketFlags, variable_header: Option<VariableHeader<'a>>, payload: Payload<'a>) -> Result<Self, EncodeError> {
+    fn packet(
+        r#type: fixed_header::PacketType,
+        flags: fixed_header::PacketFlags,
+        variable_header: Option<VariableHeader<'a>>,
+        payload: Payload<'a>,
+    ) -> Result<Self, EncodeError> {
         let len = u32::try_from(
-            variable_header.as_ref().map(VariableHeader::encoded_len).unwrap_or(0) +
-            payload.encoded_len()
+            variable_header
+                .as_ref()
+                .map(VariableHeader::encoded_len)
+                .unwrap_or(0)
+                + payload.encoded_len(),
         )?;
 
         Ok(Self {
-            fixed_header: FixedHeader::new(
-                r#type,
-                flags,
-                len,
-            ),
+            fixed_header: FixedHeader::new(r#type, flags, len),
             variable_header: variable_header,
             payload: payload,
         })
@@ -140,7 +154,7 @@ impl<'a> Decodable<'a> for Packet<'a> {
     /// If an unrecoverable error occurs an `Err(x)` is returned, the caller should
     /// disconnect and network connection and discard the contents of the connection
     /// receive buffer.
-    /// 
+    ///
     /// Decoding may return an `Ok(Status::Partial(x))` in which case the caller
     /// should buffer at most `x` more bytes and then attempt decoding again.
     ///
@@ -150,7 +164,12 @@ impl<'a> Decodable<'a> for Packet<'a> {
     fn decode(bytes: &'a [u8]) -> Result<Status<(usize, Self)>, DecodeError> {
         let (fixed_header_offset, fixed_header) = read!(FixedHeader::decode, bytes, 0);
 
-        let (variable_header_consumed, variable_header) = if let Some(result) = VariableHeader::decode(fixed_header.r#type(), fixed_header.flags(), &bytes[fixed_header_offset..]) {
+        let (variable_header_consumed, variable_header) = if let Some(result) =
+            VariableHeader::decode(
+                fixed_header.r#type(),
+                fixed_header.flags(),
+                &bytes[fixed_header_offset..],
+            ) {
             let (variable_header_offset, variable_header) = complete!(result);
             (variable_header_offset, Some(variable_header))
         } else {
@@ -165,7 +184,8 @@ impl<'a> Decodable<'a> for Packet<'a> {
             return Ok(Status::Partial(needed));
         }
 
-        let payload_bytes = &bytes[fixed_header_offset+variable_header_consumed..fixed_header_offset+variable_header_consumed+payload_len];
+        let payload_bytes = &bytes[fixed_header_offset + variable_header_consumed
+            ..fixed_header_offset + variable_header_consumed + payload_len];
 
         let payload = if let Some(result) = Payload::decode(fixed_header.r#type(), payload_bytes) {
             match result {
@@ -177,11 +197,14 @@ impl<'a> Decodable<'a> for Packet<'a> {
             payload::Payload::Bytes(payload_bytes)
         };
 
-        Ok(Status::Complete((fixed_header_offset + fixed_header.len() as usize, Self {
-            fixed_header,
-            variable_header,
-            payload,
-        })))
+        Ok(Status::Complete((
+            fixed_header_offset + fixed_header.len() as usize,
+            Self {
+                fixed_header,
+                variable_header,
+                payload,
+            },
+        )))
     }
 }
 
@@ -237,17 +260,22 @@ mod tests {
         let publish_id = 2;
         let publish = Packet::publish(
             publish_flags,
-            variable_header::publish::Publish::new(
-                "a/b",
-                Some(publish_id),
-            ),
-            payload
-        ).expect("valid packet");
+            variable_header::publish::Publish::new("a/b", Some(publish_id)),
+            payload,
+        )
+        .expect("valid packet");
 
         assert_eq!(11, publish.encoded_len());
         assert_eq!(2, publish.fixed_header().encoded_len());
         assert_eq!(9, publish.fixed_header().len());
-        assert_eq!(7, publish.variable_header().as_ref().expect("variable header").encoded_len());
+        assert_eq!(
+            7,
+            publish
+                .variable_header()
+                .as_ref()
+                .expect("variable header")
+                .encoded_len()
+        );
         assert_eq!(2, publish.payload().encoded_len());
     }
 
@@ -261,12 +289,19 @@ mod tests {
                 ("c/b", qos::QoS::AtLeastOnce),
                 ("c/c", qos::QoS::ExactlyOnce),
             ]),
-        ).expect("valid packet");
+        )
+        .expect("valid packet");
 
         assert_eq!(22, sub.encoded_len());
         assert_eq!(2, sub.fixed_header().encoded_len());
         assert_eq!(20, sub.fixed_header().len());
-        assert_eq!(2, sub.variable_header().as_ref().expect("variable header").encoded_len());
+        assert_eq!(
+            2,
+            sub.variable_header()
+                .as_ref()
+                .expect("variable header")
+                .encoded_len()
+        );
         assert_eq!(18, sub.payload().encoded_len());
     }
 }

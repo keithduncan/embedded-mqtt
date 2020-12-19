@@ -1,6 +1,6 @@
 use core::{
+    convert::{From, TryFrom},
     fmt,
-    convert::{TryFrom, From},
     result::Result,
 };
 
@@ -18,7 +18,7 @@ pub enum Error {
 
 impl TryFrom<u8> for QoS {
     type Error = Error;
-    
+
     fn try_from(byte: u8) -> Result<QoS, Error> {
         let qos = match byte & 0b11 {
             0b00 => QoS::AtMostOnce,
@@ -34,7 +34,7 @@ impl TryFrom<u8> for QoS {
 impl From<QoS> for u8 {
     fn from(qos: QoS) -> u8 {
         match qos {
-            QoS::AtMostOnce  => 0b00,
+            QoS::AtMostOnce => 0b00,
             QoS::AtLeastOnce => 0b01,
             QoS::ExactlyOnce => 0b10,
         }

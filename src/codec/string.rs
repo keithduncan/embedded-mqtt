@@ -1,20 +1,11 @@
-use core::{
-    result::Result,
-    str,
-    cmp::min,
-    convert::TryFrom,
-};
+use core::{cmp::min, convert::TryFrom, result::Result, str};
 
 use crate::{
-	status::Status,
-	error::{DecodeError, EncodeError},
+    error::{DecodeError, EncodeError},
+    status::Status,
 };
 
-use super::{
-    values,
-    Decodable,
-    Encodable,
-};
+use super::{values, Decodable, Encodable};
 
 impl<'buf> Decodable<'buf> for &'buf str {
     fn decode(bytes: &'buf [u8]) -> Result<Status<(usize, &'buf str)>, DecodeError> {
@@ -59,9 +50,9 @@ pub fn parse_string(bytes: &[u8]) -> Result<Status<(usize, &str)>, DecodeError> 
     // Requirement MQTT-1.5.3-2 requires that there be no U+0000 code points
     // in the string.
     if val.chars().any(|ch| ch == '\u{0000}') {
-        return Err(DecodeError::Utf8)
+        return Err(DecodeError::Utf8);
     }
-    
+
     Ok(Status::Complete(((2 + string_len) as usize, val)))
 }
 
@@ -72,7 +63,7 @@ pub fn encode_string(string: &str, bytes: &mut [u8]) -> Result<usize, EncodeErro
     };
 
     if bytes.len() < (2 + size) as usize {
-        return Err(EncodeError::OutOfSpace)
+        return Err(EncodeError::OutOfSpace);
     }
 
     values::encode_u16(size, &mut bytes[0..2])?;
@@ -85,15 +76,12 @@ pub fn encode_string(string: &str, bytes: &mut [u8]) -> Result<usize, EncodeErro
 mod tests {
     use super::*;
     use std::{
+        format,
         io::{Cursor, Write},
         vec::Vec,
-        format,
     };
 
-    use byteorder::{
-        BigEndian,
-        ByteOrder,
-    };
+    use byteorder::{BigEndian, ByteOrder};
 
     use byteorder::WriteBytesExt;
 
@@ -125,7 +113,7 @@ mod tests {
             parse_string(buf.get_ref().as_ref()).unwrap()
         );
     }
-    
+
     #[test]
     fn invalid_utf8() {
         let inp = [0, 159, 146, 150];

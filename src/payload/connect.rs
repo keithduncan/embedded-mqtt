@@ -3,9 +3,9 @@
 use core::result::Result;
 
 use crate::{
-    status::Status,
-    error::{DecodeError, EncodeError},
     codec::{self, Decodable, Encodable},
+    error::{DecodeError, EncodeError},
+    status::Status,
     variable_header::connect::Flags,
 };
 
@@ -21,10 +21,7 @@ impl<'buf> Decodable<'buf> for Will<'buf> {
         let (offset, topic) = read!(codec::string::parse_string, bytes, offset);
         let (offset, message) = read!(codec::values::parse_bytes, bytes, offset);
 
-        Ok(Status::Complete((offset, Will {
-            topic,
-            message,
-        })))
+        Ok(Status::Complete((offset, Will { topic, message })))
     }
 }
 
@@ -43,10 +40,7 @@ impl<'buf> Encodable for Will<'buf> {
 
 impl<'buf> Will<'buf> {
     pub fn new(topic: &'buf str, message: &'buf [u8]) -> Self {
-        Will {
-            topic,
-            message,
-        }
+        Will { topic, message }
     }
 }
 
@@ -59,7 +53,12 @@ pub struct Connect<'buf> {
 }
 
 impl<'buf> Connect<'buf> {
-    pub fn new(client_id: &'buf str, will: Option<Will<'buf>>, username: Option<&'buf str>, password: Option<&'buf [u8]>) -> Self {
+    pub fn new(
+        client_id: &'buf str,
+        will: Option<Will<'buf>>,
+        username: Option<&'buf str>,
+        password: Option<&'buf [u8]>,
+    ) -> Self {
         Connect {
             client_id,
             will,
@@ -96,21 +95,24 @@ impl<'buf> Connect<'buf> {
             (offset, None)
         };
 
-        Ok(Status::Complete((offset, Connect {
-            client_id,
-            will,
-            username,
-            password,
-        })))
+        Ok(Status::Complete((
+            offset,
+            Connect {
+                client_id,
+                will,
+                username,
+                password,
+            },
+        )))
     }
 }
 
 impl<'buf> Encodable for Connect<'buf> {
     fn encoded_len(&self) -> usize {
-        self.client_id.encoded_len() +
-            self.will.as_ref().map(|w| w.encoded_len()).unwrap_or(0) +
-            self.username.as_ref().map(|u| u.encoded_len()).unwrap_or(0) +
-            self.password.as_ref().map(|p| p.encoded_len()).unwrap_or(0)
+        self.client_id.encoded_len()
+            + self.will.as_ref().map(|w| w.encoded_len()).unwrap_or(0)
+            + self.username.as_ref().map(|u| u.encoded_len()).unwrap_or(0)
+            + self.password.as_ref().map(|p| p.encoded_len()).unwrap_or(0)
     }
 
     fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
