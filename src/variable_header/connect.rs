@@ -189,23 +189,11 @@ impl<'buf> Encodable for Connect<'buf> {
     }
 
     fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
-        let offset = 0;
-        let offset = {
-            let o = codec::string::encode_string(self.name, &mut bytes[offset..])?;
-            (offset + o)
-        };
-        let offset = {
-            let o = codec::values::encode_u8(self.level.into(), &mut bytes[offset..])?;
-            (offset + o)
-        };
-        let offset = {
-            let o = codec::values::encode_u8(self.flags.into(), &mut bytes[offset..])?;
-            (offset + o)
-        };
-        let offset = {
-            let o = codec::values::encode_u16(self.keep_alive, &mut bytes[offset..])?;
-            (offset + o)
-        };
+        let mut offset = 0;
+        offset += codec::string::encode_string(self.name, &mut bytes[offset..])?;
+        offset += codec::values::encode_u8(self.level.into(), &mut bytes[offset..])?;
+        offset += codec::values::encode_u8(self.flags.into(), &mut bytes[offset..])?;
+        offset += codec::values::encode_u16(self.keep_alive, &mut bytes[offset..])?;
         Ok(offset)
     }
 }

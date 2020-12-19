@@ -31,9 +31,9 @@ impl<'buf> Encodable for Will<'buf> {
     }
 
     fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
-        let offset = 0;
-        let offset = codec::string::encode_string(self.topic, &mut bytes[offset..])?;
-        let offset = codec::values::encode_bytes(self.message, &mut bytes[offset..])?;
+        let mut offset = 0;
+        offset += codec::string::encode_string(self.topic, &mut bytes[offset..])?;
+        offset += codec::values::encode_bytes(self.message, &mut bytes[offset..])?;
         Ok(offset)
     }
 }
@@ -116,26 +116,21 @@ impl<'buf> Encodable for Connect<'buf> {
     }
 
     fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
-        let offset = 0;
+        let mut offset = 0;
 
-        let offset = codec::string::encode_string(self.client_id, &mut bytes[offset..])?;
-        let offset = if let Some(ref will) = self.will {
-            will.encode(&mut bytes[offset..])?
-        } else {
-            offset
-        };
+        offset += codec::string::encode_string(self.client_id, &mut bytes[offset..])?;
 
-        let offset = if let Some(username) = self.username {
-            codec::string::encode_string(username, &mut bytes[offset..])?
-        } else {
-            offset
-        };
+        if let Some(ref will) = self.will {
+            offset += will.encode(&mut bytes[offset..])?;
+        }
 
-        let offset = if let Some(password) = self.password {
-            codec::values::encode_bytes(password, &mut bytes[offset..])?
-        } else {
-            offset
-        };
+        if let Some(username) = self.username {
+            offset += codec::string::encode_string(username, &mut bytes[offset..])?;
+        }
+
+        if let Some(password) = self.password {
+            offset += codec::values::encode_bytes(password, &mut bytes[offset..])?;
+        }
 
         Ok(offset)
     }

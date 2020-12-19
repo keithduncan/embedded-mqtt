@@ -64,20 +64,17 @@ impl Encodable for FixedHeader {
     }
 
     fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
-        let offset = 0;
-        let offset = {
-            let o = codec::values::encode_u8(
-                encode_packet_type(self.r#type, self.flags),
-                &mut bytes[offset..],
-            )?;
-            offset + o
-        };
-        let offset = {
-            let mut remaining_length = [0u8; 4];
-            let o = encode_remaining_length(self.len, &mut remaining_length);
-            (&mut bytes[offset..offset + o]).copy_from_slice(&remaining_length[..o]);
-            offset + o
-        };
+        let mut offset = 0;
+        offset += codec::values::encode_u8(
+            encode_packet_type(self.r#type, self.flags),
+            &mut bytes[offset..],
+        )?;
+
+        let mut remaining_length = [0u8; 4];
+        let o = encode_remaining_length(self.len, &mut remaining_length);
+        (&mut bytes[offset..offset + o]).copy_from_slice(&remaining_length[..o]);
+        offset += o;
+
         Ok(offset)
     }
 }

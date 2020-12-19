@@ -130,15 +130,9 @@ impl<'a> Encodable for Subscribe<'a> {
 
     fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
         self.topics().fold(Ok(0), |acc, (topic, qos)| {
-            let offset = acc?;
-            let offset = {
-                let o = codec::string::encode_string(topic, &mut bytes[offset..])?;
-                offset + o
-            };
-            let offset = {
-                let o = codec::values::encode_u8(u8::from(qos), &mut bytes[offset..])?;
-                offset + o
-            };
+            let mut offset = acc?;
+            offset += codec::string::encode_string(topic, &mut bytes[offset..])?;
+            offset += codec::values::encode_u8(u8::from(qos), &mut bytes[offset..])?;
             Ok(offset)
         })
     }

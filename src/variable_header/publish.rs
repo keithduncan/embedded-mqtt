@@ -63,17 +63,11 @@ impl<'a> Encodable for Publish<'a> {
     }
 
     fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
-        let offset = 0;
-        let offset = {
-            let o = self.topic_name.encode(&mut bytes[offset..])?;
-            offset + o
-        };
-        let offset = if let Some(packet_identifier) = self.packet_identifier {
-            let o = codec::values::encode_u16(packet_identifier, &mut bytes[offset..])?;
-            offset + o
-        } else {
-            offset
-        };
+        let mut offset = 0;
+        offset += self.topic_name.encode(&mut bytes[offset..])?;
+        if let Some(packet_identifier) = self.packet_identifier {
+            offset += codec::values::encode_u16(packet_identifier, &mut bytes[offset..])?;
+        }
         Ok(offset)
     }
 }
