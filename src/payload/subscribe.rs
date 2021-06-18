@@ -88,9 +88,10 @@ impl<'a> fmt::Debug for Subscribe<'a> {
     }
 }
 
-fn parse_subscription<'a>(
-    bytes: &'a [u8],
-) -> Result<Status<(usize, (&'a str, qos::QoS))>, DecodeError> {
+#[allow(clippy::type_complexity)]
+fn parse_subscription(
+    bytes: &[u8],
+) -> Result<Status<(usize, (&str, qos::QoS))>, DecodeError> {
     let offset = 0;
 
     let (offset, topic) = {

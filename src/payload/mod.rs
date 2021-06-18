@@ -52,7 +52,7 @@ impl<'a> Encodable for Payload<'a> {
             Payload::Connect(ref c) => c.encoded_len(),
             Payload::Subscribe(ref c) => c.encoded_len(),
             Payload::Suback(ref c) => c.encoded_len(),
-            Payload::Bytes(ref c) => c.len(),
+            Payload::Bytes(c) => c.len(),
         }
     }
 
@@ -61,7 +61,7 @@ impl<'a> Encodable for Payload<'a> {
             Payload::Connect(ref c) => c.encode(bytes),
             Payload::Subscribe(ref c) => c.encode(bytes),
             Payload::Suback(ref c) => c.encode(bytes),
-            Payload::Bytes(ref c) => {
+            Payload::Bytes(c) => {
                 if bytes.len() < c.len() {
                     return Err(EncodeError::OutOfSpace);
                 }
