@@ -1,14 +1,14 @@
 use core::result::Result;
 
 use crate::{
-    status::Status,
-    fixed_header::{PacketType, PacketFlags},
-    error::{DecodeError, EncodeError},
     codec::Encodable,
+    error::{DecodeError, EncodeError},
+    fixed_header::{PacketFlags, PacketType},
+    status::Status,
 };
 
-pub mod connect;
 pub mod connack;
+pub mod connect;
 pub mod packet_identifier;
 pub mod publish;
 
@@ -23,7 +23,9 @@ pub enum VariableHeader<'a> {
 }
 
 pub trait HeaderDecode<'a>
-    where Self: core::marker::Sized {
+where
+    Self: core::marker::Sized,
+{
     fn decode(flags: PacketFlags, bytes: &'a [u8]) -> Result<Status<(usize, Self)>, DecodeError>;
 }
 

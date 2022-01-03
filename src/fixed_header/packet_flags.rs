@@ -1,7 +1,7 @@
 use core::{
     convert::{From, TryFrom, TryInto},
-    result::Result,
     fmt::Debug,
+    result::Result,
 };
 
 use crate::qos;

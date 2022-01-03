@@ -6,15 +6,12 @@ use crate::{
     status::Status,
 };
 
-mod packet_type;
 mod packet_flags;
+mod packet_type;
 
 pub use self::{
+    packet_flags::{PacketFlags, PublishFlags},
     packet_type::PacketType,
-    packet_flags::{
-        PacketFlags,
-        PublishFlags,
-    },
 };
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -26,11 +23,7 @@ pub struct FixedHeader {
 
 impl FixedHeader {
     pub fn new(r#type: PacketType, flags: PacketFlags, len: u32) -> Self {
-        FixedHeader {
-            r#type,
-            flags,
-            len
-        }
+        FixedHeader { r#type, flags, len }
     }
 
     pub fn r#type(&self) -> PacketType {
@@ -43,6 +36,10 @@ impl FixedHeader {
 
     pub fn len(&self) -> u32 {
         self.len
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
     }
 }
 
@@ -59,11 +56,7 @@ impl<'buf> Decodable<'buf> for FixedHeader {
 
         let (offset, len) = read!(parse_remaining_length, bytes, offset);
 
-        Ok(Status::Complete((offset, Self {
-            r#type,
-            flags,
-            len
-        })))
+        Ok(Status::Complete((offset, Self { r#type, flags, len })))
     }
 }
 
@@ -75,17 +68,17 @@ impl Encodable for FixedHeader {
     }
 
     fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
-        let offset = 0;
-        let offset = {
-            let o = codec::values::encode_u8(encode_packet_type(self.r#type, self.flags), &mut bytes[offset..])?;
-            offset + o
-        };
-        let offset = {
-            let mut remaining_length = [0u8; 4];
-            let o = encode_remaining_length(self.len, &mut remaining_length);
-            (&mut bytes[offset..offset+o]).copy_from_slice(&remaining_length[..o]);
-            offset + o
-        };
+        let mut offset = 0;
+        offset += codec::values::encode_u8(
+            encode_packet_type(self.r#type, self.flags),
+            &mut bytes[offset..],
+        )?;
+
+        let mut remaining_length = [0u8; 4];
+        let o = encode_remaining_length(self.len, &mut remaining_length);
+        (&mut bytes[offset..offset + o]).copy_from_slice(&remaining_length[..o]);
+        offset += o;
+
         Ok(offset)
     }
 }
@@ -126,7 +119,7 @@ fn encode_remaining_length(mut len: u32, buf: &mut [u8; 4]) -> usize {
             byte |= 128;
         }
         buf[index] = byte;
-        index = index + 1;
+        index += 1;
 
         if len == 0 {
             break index;
@@ -181,7 +174,10 @@ fn encode_packet_type(r#type: PacketType, flags: PacketFlags) -> u8 {
     (packet_type << 4) | flags.0
 }
 
-fn validate_flag(packet_type: PacketType, flags: PacketFlags) -> Result<(PacketType, PacketFlags), DecodeError> {
+fn validate_flag(
+    packet_type: PacketType,
+    flags: PacketFlags,
+) -> Result<(PacketType, PacketFlags), DecodeError> {
     // for the following packet types, the control flag MUST be zero
     const ZERO_TYPES: &[PacketType] = &[
         PacketType::Connect,
@@ -212,10 +208,8 @@ fn validate_flag_val(
     types: &[PacketType],
     expected_flags: PacketFlags,
 ) -> Result<(PacketType, PacketFlags), DecodeError> {
-    if let Some(_) = types.iter().find(|&&v| v == packet_type) {
-        if flags != expected_flags {
-            return Err(DecodeError::PacketFlag);
-        }
+    if types.iter().any(|&v| v == packet_type) && flags != expected_flags {
+        return Err(DecodeError::PacketFlag);
     }
 
     Ok((packet_type, flags))
@@ -312,8 +306,9 @@ mod tests {
             .map(|i| {
                 let mut buf = [0u8; 4];
                 let expected_offset = encode_remaining_length(i, &mut buf);
-                let (offset, len) =
-                    parse_remaining_length(&buf).expect(&format!("Failed for number: {}", i)).unwrap();
+                let (offset, len) = parse_remaining_length(&buf)
+                    .expect(&format!("Failed for number: {}", i))
+                    .unwrap();
                 assert_eq!(i, len);
                 assert_eq!(expected_offset, offset);
                 0

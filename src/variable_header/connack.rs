@@ -1,14 +1,14 @@
 use core::{
-    fmt::Debug,
     convert::{TryFrom, TryInto},
+    fmt::Debug,
     result::Result,
 };
 
 use crate::{
-    fixed_header::PacketFlags,
     codec::{self, Encodable},
-    status::Status,
     error::{DecodeError, EncodeError},
+    fixed_header::PacketFlags,
+    status::Status,
 };
 
 use super::HeaderDecode;
@@ -51,8 +51,8 @@ impl Encodable for Flags {
     }
 
     fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
-        if bytes.len() < 1 {
-            return Err(EncodeError::OutOfSpace)
+        if bytes.is_empty() {
+            return Err(EncodeError::OutOfSpace);
         }
 
         bytes[0] = self.0;
@@ -92,17 +92,17 @@ impl Encodable for ReturnCode {
     }
 
     fn encode(&self, bytes: &mut [u8]) -> Result<usize, EncodeError> {
-        if bytes.len() < 1 {
-            return Err(EncodeError::OutOfSpace)
+        if bytes.is_empty() {
+            return Err(EncodeError::OutOfSpace);
         }
 
         let val = match self {
-            &ReturnCode::Accepted => 0,
-            &ReturnCode::RefusedProtocolVersion => 1,
-            &ReturnCode::RefusedClientIdentifier => 2,
-            &ReturnCode::RefusedServerUnavailable => 3,
-            &ReturnCode::RefusedUsernameOrPassword => 4,
-            &ReturnCode::RefusedNotAuthorized => 5,
+            ReturnCode::Accepted => 0,
+            ReturnCode::RefusedProtocolVersion => 1,
+            ReturnCode::RefusedClientIdentifier => 2,
+            ReturnCode::RefusedServerUnavailable => 3,
+            ReturnCode::RefusedUsernameOrPassword => 4,
+            ReturnCode::RefusedNotAuthorized => 5,
         };
 
         bytes[0] = val;
@@ -138,16 +138,17 @@ impl<'buf> HeaderDecode<'buf> for Connack {
 
         // read connack flags
         let (offset, flags) = read!(codec::values::parse_u8, bytes, offset);
-        let flags = flags.try_into().map_err(|_| DecodeError::InvalidConnackFlag)?;
+        let flags = flags
+            .try_into()
+            .map_err(|_| DecodeError::InvalidConnackFlag)?;
 
         // read return code
         let (offset, return_code) = read!(codec::values::parse_u8, bytes, offset);
-        let return_code = return_code.try_into().map_err(|_| DecodeError::InvalidConnackReturnCode)?;
+        let return_code = return_code
+            .try_into()
+            .map_err(|_| DecodeError::InvalidConnackReturnCode)?;
 
-        Ok(Status::Complete((offset, Connack {
-            flags,
-            return_code,
-        })))
+        Ok(Status::Complete((offset, Connack { flags, return_code })))
     }
 }
 
@@ -164,6 +165,4 @@ impl Encodable for Connack {
 }
 
 #[cfg(test)]
-mod tests {
-    
-}
+mod tests {}
